@@ -253,5 +253,6 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   wallBlockPfb: {fileID: 5860434735038898309, guid: d07059bd7bcec4943b5206cd8b5346fb, type: 3}
   fallBlockPfb: {fileID: 6373646331146805058, guid: 29f5f140977664be59143aed5a337785, type: 3}
+  placementBlockPfb: {fileID: 6373646331146805058, guid: b7a0b5dcd052342b7a9eca98fb959ba1, type: 3}
   OX: -5
   OY: 8

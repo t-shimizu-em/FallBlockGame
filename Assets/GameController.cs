@@ -6,6 +6,7 @@ public class GameController : MonoBehaviour
 {
     public GameObject wallBlockPfb;
     public GameObject fallBlockPfb;
+    public GameObject placementBlockPfb;
     public float OX, OY; // 原点座標
     public const int hight = 21;
     public const int width = 14;
@@ -134,6 +135,31 @@ public class GameController : MonoBehaviour
                 }
                 if (groundCountTime >= 1)
                 {
+                    // 着地した落下ブロックを配置ブロックに置き換え
+                    for (int i=0; i<4; i++)
+                    {
+                        for (int j=0; j<4; j++)
+                        {
+                            if (fallBlockStat[j, i] == 2)
+                            {
+                                blockStat[j + fallBlockPosY, i + fallBlockPosX] = 3;
+                            }
+                        }
+                    }
+
+                    // 配置ブロック生成
+                    for (int i = 0; i < width; i++)
+                    {
+                        for (int j = 0; j < hight; j++)
+                        {
+                            if (blockStat[j, i] == 3)
+                            {
+                                Instantiate(placementBlockPfb, new Vector3(i + OX, -j + OY, 0), Quaternion.identity);
+                            }
+                        }
+                    }
+
+                    // 新しい落下ブロックの生成
                     fallBlockPosX = fallBlockInitPosX;
                     fallBlockPosY = fallBlockInitPosY;
                     blockNum = Random.Range(0, 8);
