@@ -17,6 +17,7 @@ public class GameController : MonoBehaviour
     // 3:配置ブロック
 
     private GameObject[,] fallBlockObj = new GameObject[4, 4];
+    FallBlockController fallBlockController = new FallBlockController();
     private static int fallBlockInitPosX = 4;
     private static int fallBlockInitPosY = 0;
     private static int fallBlockPosX;
@@ -71,7 +72,6 @@ public class GameController : MonoBehaviour
         fallBlockPosY = fallBlockInitPosY;
         blockNum = Random.Range(0, 10);
         rot = 0;
-        FallBlockController fallBlockController = new FallBlockController();
         fallBlockStat = fallBlockController.setFallBlock(blockNum, rot);
 
     }
@@ -94,6 +94,37 @@ public class GameController : MonoBehaviour
                 {
                     fallBlockObj[j, i] = Instantiate(fallBlockPfb, new Vector3(fallBlockPosX + i + OX, -fallBlockPosY - j + OY, 0), Quaternion.identity);
                 }
+            }
+        }
+
+        // 落下ブロックの水平移動操作
+        if (Input.GetButtonDown("Horizontal"))
+        {
+            if (Input.GetAxis("Horizontal") > 0)
+            {
+                fallBlockPosX++;
+            }
+            else if (Input.GetAxis("Horizontal") < 0)
+            {
+                fallBlockPosX--;
+            }
+        }
+
+        // 落下ブロックの回転操作
+        if (Input.GetButtonDown("Jump"))
+        {
+            rot++;
+            if (rot == 4) rot = 0;
+            fallBlockStat = fallBlockController.setFallBlock(blockNum, rot);
+        }
+
+        // 落下ブロック落下速度上昇
+        if (Input.GetButtonDown("Vertical"))
+        {
+            if (Input.GetAxis("Vertical") < 0)
+            {
+                fallBlockPosY++;
+                fallCountTime = 0;
             }
         }
     }
