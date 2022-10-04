@@ -18,6 +18,7 @@ public class GameController : MonoBehaviour
     // 3:配置ブロック
     // 4:地面ブロック
 
+    private GameObject[,] blockObj = new GameObject[21, 14];
     private GameObject[,] fallBlockObj = new GameObject[4, 4];
     FallBlockController fallBlockController = new FallBlockController();
     private static int fallBlockInitPosX = 4;
@@ -55,10 +56,11 @@ public class GameController : MonoBehaviour
         {0,0,0,0,0,0,0,0,0,0,0,0,0,0}
     };
     private int gameStat;
+    private bool[] eraseRow =　new bool[18];
     private const int GAMEOVER = 0;
     private const int START = 1;
     private const int GROUND = 2;
-    private const int ERACE = 3;
+    private const int ERASE = 3;
     private bool downBanFlg; // 0:下移動可 1:下移動禁止
 
     
@@ -86,7 +88,7 @@ public class GameController : MonoBehaviour
         fallBlockPosY = fallBlockInitPosY;
         blockNum = Random.Range(0, 10);
         rot = 0;
-        fallBlockStat = fallBlockController.setFallBlock(blockNum, rot);
+        fallBlockStat = fallBlockController.SetFallBlock(blockNum, rot);
 
     }
 
@@ -104,20 +106,9 @@ public class GameController : MonoBehaviour
                     fallBlockPosY++;
                     fallCountTime = 0;
                 }
-                for (int i = 0; i < 4; i++)
-                {
-                    for (int j = 0; j < 4; j++)
-                    {
-                        Destroy(fallBlockObj[j, i]);
-                        if (fallBlockStat[j, i] == 2)
-                        {
-                            fallBlockObj[j, i] = Instantiate(fallBlockPfb, new Vector3(fallBlockPosX + i + OX, -fallBlockPosY - j + OY, 0), Quaternion.identity);
-                        }
-                    }
-                }
 
                 // 着地判定
-                if (judgeGround(blockNum, rot, blockStat, fallBlockPosX, fallBlockPosY))
+                if (JudgeGround(blockNum, rot, blockStat, fallBlockPosX, fallBlockPosY))
                 {
                     gameStat = GROUND;
                 }
@@ -128,7 +119,7 @@ public class GameController : MonoBehaviour
                 downBanFlg = true;
 
                 // 落下ブロックの非着地判定
-                if (!judgeGround(blockNum, rot, blockStat, fallBlockPosX, fallBlockPosY))
+                if (!JudgeGround(blockNum, rot, blockStat, fallBlockPosX, fallBlockPosY))
                 {
                     groundCountTime = 0;
                     gameStat = START;
@@ -147,30 +138,21 @@ public class GameController : MonoBehaviour
                         }
                     }
 
-                    // 配置ブロック生成
-                    for (int i = 0; i < width; i++)
+                    // 消去判定
+                    if (JudgeEraseRow())
                     {
-                        for (int j = 0; j < hight; j++)
-                        {
-                            if (blockStat[j, i] == 3)
-                            {
-                                Instantiate(placementBlockPfb, new Vector3(i + OX, -j + OY, 0), Quaternion.identity);
-                            }
-                        }
+                        gameStat = ERASE;
                     }
-
-                    // 新しい落下ブロックの生成
-                    fallBlockPosX = fallBlockInitPosX;
-                    fallBlockPosY = fallBlockInitPosY;
-                    blockNum = Random.Range(0, 8);
-                    rot = 0;
-                    fallBlockStat = fallBlockController.setFallBlock(blockNum, rot);
-                    gameStat = START;
-                    groundCountTime = 0;
+                    else
+                    {
+                        NextBlockSet();
+                    }
                 }
                 break;
-            case ERACE:
-
+            case ERASE:
+                BlockErase();
+                NextBlockSet();
+                gameStat = START;
                 break;
             case GAMEOVER:
 
@@ -180,11 +162,11 @@ public class GameController : MonoBehaviour
         // 落下ブロックの水平移動操作
         if (Input.GetButtonDown("Horizontal"))
         {
-            if (Input.GetAxis("Horizontal") > 0 && !judgeContactRight(blockNum, rot, blockStat, fallBlockPosX, fallBlockPosY))
+            if (Input.GetAxis("Horizontal") > 0 && !JudgeContactRight(blockNum, rot, blockStat, fallBlockPosX, fallBlockPosY))
             {
                 fallBlockPosX++;
             }
-            else if (Input.GetAxis("Horizontal") < 0 && !judgeContactLeft(blockNum, rot, blockStat, fallBlockPosX, fallBlockPosY))
+            else if (Input.GetAxis("Horizontal") < 0 && !JudgeContactLeft(blockNum, rot, blockStat, fallBlockPosX, fallBlockPosY))
             {
                 fallBlockPosX--;
             }
@@ -195,7 +177,7 @@ public class GameController : MonoBehaviour
         {
             rot++;
             if (rot == 4) rot = 0;
-            fallBlockStat = fallBlockController.setFallBlock(blockNum, rot);
+            fallBlockStat = fallBlockController.SetFallBlock(blockNum, rot);
         }
         // 落下ブロック落下速度上昇
         if (Input.GetButtonDown("Vertical") && !downBanFlg)
@@ -206,14 +188,59 @@ public class GameController : MonoBehaviour
                 fallCountTime = 0;
             }
         }
+
+        UpdateDisplay();
+    }
+
+
+    // 描画処理
+    private void UpdateDisplay()
+    {
+        // 落下ブロック生成
+        for (int i = 0; i < 4; i++)
+        {
+            for (int j = 0; j < 4; j++)
+            {
+                Destroy(fallBlockObj[j, i]);
+                if (fallBlockStat[j, i] == 2)
+                {
+                    fallBlockObj[j, i] = Instantiate(fallBlockPfb, new Vector3(fallBlockPosX + i + OX, -fallBlockPosY - j + OY, 0), Quaternion.identity);
+                }
+            }
+        }
+
+        // 配置ブロック生成
+        for (int i = 1; i < 11; i++)
+        {
+            for (int j = 1; j < 18; j++)
+            {
+                Destroy(blockObj[j,i]);
+                if (blockStat[j, i] == 3)
+                {
+                    blockObj[j,i] = Instantiate(placementBlockPfb, new Vector3(i + OX, -j + OY, 0), Quaternion.identity);
+                }
+            }
+        }
+    }
+
+    // 新しい落下ブロックの生成
+    private void NextBlockSet()
+    {
+        fallBlockPosX = fallBlockInitPosX;
+        fallBlockPosY = fallBlockInitPosY;
+        blockNum = Random.Range(0, 8);
+        rot = 0;
+        fallBlockStat = fallBlockController.SetFallBlock(blockNum, rot);
+        gameStat = START;
+        groundCountTime = 0;
     }
 
     // 着地判定
-    public bool judgeGround(int blockNum, int rot, int[,] blockStat, int x, int y)
+    private bool JudgeGround(int blockNum, int rot, int[,] blockStat, int x, int y)
     {
         bool groundFlg = false;
         int[,] block = new int[4, 4];
-        block = fallBlockController.setFallBlock(blockNum, rot);
+        block = fallBlockController.SetFallBlock(blockNum, rot);
         for (int i = 0; i < 4; i++)
         {
             for (int j = 3; j >= 0; j--)
@@ -232,11 +259,11 @@ public class GameController : MonoBehaviour
     }
 
     // 右側壁当たり判定
-    public bool judgeContactRight(int blockNum, int rot, int[,] blockStat, int x, int y)
+    private bool JudgeContactRight(int blockNum, int rot, int[,] blockStat, int x, int y)
     {
         bool contactFlg = false;
         int[,] block = new int[4, 4];
-        block = fallBlockController.setFallBlock(blockNum, rot);
+        block = fallBlockController.SetFallBlock(blockNum, rot);
         for (int j = 0; j < 4; j++)
         {
             for (int i = 3; i >= 0; i--)
@@ -255,11 +282,11 @@ public class GameController : MonoBehaviour
     }
 
     // 左側壁当たり判定
-    public bool judgeContactLeft(int blockNum, int rot, int[,] blockStat, int x, int y)
+    private bool JudgeContactLeft(int blockNum, int rot, int[,] blockStat, int x, int y)
     {
         bool contactFlg = false;
         int[,] block = new int[4, 4];
-        block = fallBlockController.setFallBlock(blockNum, rot);
+        block = fallBlockController.SetFallBlock(blockNum, rot);
         for (int j = 0; j < 4; j++)
         {
             for (int i = 0; i < 4; i++)
@@ -275,5 +302,59 @@ public class GameController : MonoBehaviour
             }
         }
         return contactFlg;
+    }
+
+    // ブロック消去判定
+    private bool JudgeEraseRow()
+    {
+        bool eraseFlg = false;
+        for (int j=0; j<18; j++)
+        {
+            eraseRow[j] = false;
+            bool buff = true;
+            for (int i=0; i<11; i++)
+            {
+                if (blockStat[j,i] == 0)
+                {
+                    buff = false;
+                }
+            }
+            if (buff)
+            {
+                eraseRow[j] = true;
+                eraseFlg = true;
+            }
+            Debug.Log("eraseRow[" + j + "]:" + eraseRow[j]);
+        }
+        return eraseFlg;
+    }
+
+    // ブロック消去
+    private void BlockErase()
+    {
+        int eraseCount;
+
+        eraseCount = 0;
+        for (int j = 0; j < 18; j++)
+        {
+            if (eraseRow[j] == true)
+            {
+                eraseCount++;
+                // 1行消去
+                for (int i = 1; i < 11; i++)
+                {
+                    blockStat[j, i] = 0;
+                }
+                // 消去分、下にずらす
+                for (int k = j; k > 0; k--)
+                {
+                    for (int i = 1; i < 11; i++)
+                    {
+                        blockStat[k, i] = blockStat[k - 1, i];
+                        blockStat[k - 1, i] = 0;
+                    }
+                }
+            }
+        }
     }
 }

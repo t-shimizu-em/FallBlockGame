@@ -228,7 +228,7 @@ public class FallBlockController
     /**
      * 落下ブロック一覧
      */
-    public int[,] setFallBlock(int blockNum, int rot)
+    public int[,] SetFallBlock(int blockNum, int rot)
     {
         int[,] fallBlock = new int[4, 4];
         switch (blockNum)
