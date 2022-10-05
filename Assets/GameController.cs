@@ -2,6 +2,7 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
+using UnityEngine.SceneManagement;
 
 public class GameController : MonoBehaviour
 {
@@ -9,6 +10,7 @@ public class GameController : MonoBehaviour
     public GameObject fallBlockPfb;
     public GameObject placementBlockPfb;
     public Text scoreText;
+    public Text gameOverText;
     public float OX, OY; // 原点座標
     public const int hight = 21;
     public const int width = 14;
@@ -141,10 +143,14 @@ public class GameController : MonoBehaviour
                         }
                     }
 
-                    // 消去判定
+                    // 判定
                     if (JudgeEraseRow())
                     {
                         gameStat = ERASE;
+                    }
+                    else if (JudgeGameOver())
+                    {
+                        gameStat = GAMEOVER;
                     }
                     else
                     {
@@ -159,7 +165,7 @@ public class GameController : MonoBehaviour
                 gameStat = START;
                 break;
             case GAMEOVER:
-
+                gameOverText.gameObject.SetActive(true);
                 break;
         }
 
@@ -389,5 +395,18 @@ public class GameController : MonoBehaviour
         }
 
         return addScore;
+    }
+
+    //ゲームオーバー判定
+    private bool JudgeGameOver()
+    {
+        if (blockStat[fallBlockInitPosY, fallBlockInitPosX] == 3)
+        {
+            return true;
+        }
+        else
+        {
+            return false;
+        }
     }
 }
