@@ -392,6 +392,7 @@ public class GameController : MonoBehaviour
                     {
                         blockStat[k, i] = blockStat[k - 1, i];
                         blockStat[k - 1, i] = 0;
+                        blockObj[k, i].gameObject.SetActive(false);
                     }
                 }
             }
