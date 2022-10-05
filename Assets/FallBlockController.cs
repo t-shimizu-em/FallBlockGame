@@ -288,9 +288,11 @@ public class FallBlockController
                 switch (rot)
                 {
                     case 0:
+                    case 2:
                         fallBlock = block30;
                         break;
                     case 1:
+                    case 3:
                         fallBlock = block31;
                         break;
                 }
@@ -299,16 +301,27 @@ public class FallBlockController
                 switch (rot)
                 {
                     case 0:
+                    case 2:
                         fallBlock = block40;
                         break;
                     case 1:
+                    case 3:
                         fallBlock = block41;
                         break;
                 }
                 break;
             case 5:
-                if (rot == 0) fallBlock = block50;
-                else if (rot == 1) fallBlock = block51;
+                switch (rot)
+                {
+                    case 0:
+                    case 2:
+                        fallBlock = block50;
+                        break;
+                    case 1:
+                    case 3:
+                        fallBlock = block51;
+                        break;
+                }
                 break;
             case 6:
                 fallBlock = block60;

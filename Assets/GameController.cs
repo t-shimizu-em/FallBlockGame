@@ -1,12 +1,14 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.UI;
 
 public class GameController : MonoBehaviour
 {
     public GameObject wallBlockPfb;
     public GameObject fallBlockPfb;
     public GameObject placementBlockPfb;
+    public Text scoreText;
     public float OX, OY; // 原点座標
     public const int hight = 21;
     public const int width = 14;
@@ -27,6 +29,7 @@ public class GameController : MonoBehaviour
     private static int fallBlockPosY;
     private int blockNum;
     private int rot;
+    private int score;
     private float fallCountTime;
     private float groundCountTime;
     private int[,] fallBlockStat = new int[4, 4];
@@ -150,7 +153,8 @@ public class GameController : MonoBehaviour
                 }
                 break;
             case ERASE:
-                BlockErase();
+                score += AddScore(BlockErase());
+                scoreText.text = "Score:" + score;
                 NextBlockSet();
                 gameStat = START;
                 break;
@@ -330,7 +334,7 @@ public class GameController : MonoBehaviour
     }
 
     // ブロック消去
-    private void BlockErase()
+    private int BlockErase()
     {
         int eraseCount;
 
@@ -356,5 +360,34 @@ public class GameController : MonoBehaviour
                 }
             }
         }
+
+        return eraseCount;
+    }
+
+    // スコア加算
+    private int AddScore(int rowNum)
+    {
+        int addScore;
+
+        switch (rowNum)
+        {
+            case 1:
+                addScore = 100;
+                break;
+            case 2:
+                addScore = 300;
+                break;
+            case 3:
+                addScore = 500;
+                break;
+            case 4:
+                addScore = 1000;
+                break;
+            default:
+                addScore = 0;
+                break;
+        }
+
+        return addScore;
     }
 }
