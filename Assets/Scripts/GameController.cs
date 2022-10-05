@@ -95,7 +95,25 @@ public class GameController : MonoBehaviour
         blockNum = Random.Range(0, 10);
         rot = 0;
         fallBlockStat = fallBlockController.SetFallBlock(blockNum, rot);
+        for (int i=0; i<4; i++)
+        {
+            for (int j=0; j<4; j++)
+            {
+                fallBlockObj[j, i] = Instantiate(fallBlockPfb, new Vector3(fallBlockPosX + i + OX, -fallBlockPosY - j + OY, 0), Quaternion.identity);
+                fallBlockObj[j, i].gameObject.SetActive(false);
+            }
+        }
 
+        // 配置ブロック初期設定
+        for(int i = 1; i < 11; i++)
+        {
+            for (int j = 1; j < 18; j++)
+            {
+                blockObj[j, i] = Instantiate(placementBlockPfb, new Vector3(i + OX, -j + OY, 0), Quaternion.identity);
+                blockObj[j, i].gameObject.SetActive(false);
+            }
+        }
+        
     }
 
     void Update()
@@ -224,10 +242,10 @@ public class GameController : MonoBehaviour
         {
             for (int j = 0; j < 4; j++)
             {
-                Destroy(fallBlockObj[j, i]);
                 if (fallBlockStat[j, i] == 2)
                 {
-                    fallBlockObj[j, i] = Instantiate(fallBlockPfb, new Vector3(fallBlockPosX + i + OX, -fallBlockPosY - j + OY, 0), Quaternion.identity);
+                    fallBlockObj[j, i].gameObject.SetActive(true);
+                    fallBlockObj[j, i].gameObject.transform.position = new Vector3(fallBlockPosX + i + OX, -fallBlockPosY - j + OY, 0);
                 }
             }
         }
@@ -237,10 +255,9 @@ public class GameController : MonoBehaviour
         {
             for (int j = 1; j < 18; j++)
             {
-                Destroy(blockObj[j,i]);
                 if (blockStat[j, i] == 3)
                 {
-                    blockObj[j,i] = Instantiate(placementBlockPfb, new Vector3(i + OX, -j + OY, 0), Quaternion.identity);
+                    blockObj[j, i].gameObject.SetActive(true);
                 }
             }
         }
@@ -347,7 +364,6 @@ public class GameController : MonoBehaviour
                 eraseRow[j] = true;
                 eraseFlg = true;
             }
-            Debug.Log("eraseRow[" + j + "]:" + eraseRow[j]);
         }
         return eraseFlg;
     }
