@@ -242,6 +242,7 @@ public class GameController : MonoBehaviour
         {
             for (int j = 0; j < 4; j++)
             {
+                fallBlockObj[j, i].gameObject.SetActive(false);
                 if (fallBlockStat[j, i] == 2)
                 {
                     fallBlockObj[j, i].gameObject.SetActive(true);
