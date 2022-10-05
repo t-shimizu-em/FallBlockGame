@@ -66,7 +66,8 @@ public class GameController : MonoBehaviour
     private const int START = 1;
     private const int GROUND = 2;
     private const int ERASE = 3;
-    private bool downBanFlg; // 0:下移動可 1:下移動禁止
+    private bool downBanFlg; // false:下移動可 true:下移動禁止
+    private bool rotBanFlg; // false:回転可 true:回転禁止
 
     
     void Start()
@@ -103,6 +104,7 @@ public class GameController : MonoBehaviour
         {
             case START:
                 downBanFlg = false;
+                rotBanFlg = false;
                 
                 // 1秒ごとにブロックを落下
                 fallCountTime += Time.deltaTime;
@@ -122,6 +124,7 @@ public class GameController : MonoBehaviour
                 fallCountTime = 0;
                 groundCountTime += Time.deltaTime;
                 downBanFlg = true;
+                rotBanFlg = true;
 
                 // 落下ブロックの非着地判定
                 if (!JudgeGround(blockNum, rot, blockStat, fallBlockPosX, fallBlockPosY))
@@ -182,8 +185,18 @@ public class GameController : MonoBehaviour
             }
         }
 
+        // 壁際での回転禁止処理
+        if (JudgeContactRight(blockNum, rot, blockStat, fallBlockPosX, fallBlockPosY) || JudgeContactLeft(blockNum, rot, blockStat, fallBlockPosX, fallBlockPosY))
+        {
+            rotBanFlg = true;
+        }
+        else
+        {
+            rotBanFlg = false;
+        }
+
         // 落下ブロックの回転操作
-        if (Input.GetButtonDown("Jump"))
+        if (Input.GetButtonDown("Jump") && !rotBanFlg)
         {
             rot++;
             if (rot == 4) rot = 0;
