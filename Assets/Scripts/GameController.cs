@@ -9,6 +9,12 @@ public class GameController : MonoBehaviour
     public GameObject wallBlockPfb;
     public GameObject fallBlockPfb;
     public GameObject placementBlockPfb;
+    public AudioClip rotSe;
+    public AudioClip moveSe;
+    public AudioClip eraseSe;
+    public AudioSource rotAudioSource;
+    public AudioSource moveAudioSource;
+    public AudioSource eraseAudioSource;
     public Text scoreText;
     public Text gameOverText;
     public float OX, OY; // 原点座標
@@ -25,6 +31,7 @@ public class GameController : MonoBehaviour
     private GameObject[,] blockObj = new GameObject[21, 14];
     private GameObject[,] fallBlockObj = new GameObject[4, 4];
     FallBlockController fallBlockController = new FallBlockController();
+    AudioSource audioSource;
     private static int fallBlockInitPosX = 4;
     private static int fallBlockInitPosY = 0;
     private static int fallBlockPosX;
@@ -180,6 +187,7 @@ public class GameController : MonoBehaviour
                 }
                 break;
             case ERASE:
+                eraseAudioSource.PlayOneShot(eraseSe);
                 score += AddScore(BlockErase());
                 scoreText.text = "Score:" + score;
                 NextBlockSet();
@@ -193,6 +201,7 @@ public class GameController : MonoBehaviour
         // 落下ブロックの水平移動操作
         if (Input.GetButtonDown("Horizontal"))
         {
+            moveAudioSource.PlayOneShot(moveSe);
             if (Input.GetAxis("Horizontal") > 0 && !JudgeContactRight(blockNum, rot, blockStat, fallBlockPosX, fallBlockPosY))
             {
                 fallBlockPosX++;
@@ -216,6 +225,7 @@ public class GameController : MonoBehaviour
         // 落下ブロックの回転操作
         if (Input.GetButtonDown("Jump") && !rotBanFlg)
         {
+            rotAudioSource.PlayOneShot(rotSe);
             rot++;
             if (rot == 4) rot = 0;
             fallBlockStat = fallBlockController.SetFallBlock(blockNum, rot);
@@ -223,6 +233,7 @@ public class GameController : MonoBehaviour
         // 落下ブロック落下速度上昇
         if (Input.GetButtonDown("Vertical") && !downBanFlg)
         {
+            moveAudioSource.PlayOneShot(moveSe);
             if (Input.GetAxis("Vertical") < 0)
             {
                 fallBlockPosY++;
@@ -366,6 +377,7 @@ public class GameController : MonoBehaviour
                 eraseFlg = true;
             }
         }
+        Debug.Log(eraseFlg);
         return eraseFlg;
     }
 

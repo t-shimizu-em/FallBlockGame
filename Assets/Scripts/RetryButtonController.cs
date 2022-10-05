@@ -7,6 +7,7 @@ public class RetryButtonController : MonoBehaviour
 {
     public void OnClickRetryButton()
     {
+        SoundManager.Instance.playButtonSe();
         SceneManager.LoadScene("GameScene");
     }
 }

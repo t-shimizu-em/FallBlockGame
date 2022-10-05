@@ -7,6 +7,7 @@ public class StartButtonController : MonoBehaviour
 {
     public void OnClickStartButton()
     {
+        SoundManager.Instance.playButtonSe();
         SceneManager.LoadScene("GameScene");
     }
 }

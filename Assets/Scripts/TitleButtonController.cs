@@ -7,6 +7,7 @@ public class TitleButtonController : MonoBehaviour
 {
     public void OnClickTitleButton()
     {
+        SoundManager.Instance.playButtonSe();
         SceneManager.LoadScene("TitleScene");
     }
 }
