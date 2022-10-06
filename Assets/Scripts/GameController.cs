@@ -30,18 +30,23 @@ public class GameController : MonoBehaviour
 
     private GameObject[,] blockObj = new GameObject[21, 14];
     private GameObject[,] fallBlockObj = new GameObject[4, 4];
+    private GameObject[,] nextFallBlockObj = new GameObject[4, 4];
     FallBlockController fallBlockController = new FallBlockController();
     AudioSource audioSource;
+    private static int nextFallBlockPosX = 14;
+    private static int nextFallBlockPosY = 2;
     private static int fallBlockInitPosX = 4;
     private static int fallBlockInitPosY = 0;
     private static int fallBlockPosX;
     private static int fallBlockPosY;
     private int blockNum;
+    private int nextBlockNum;
     private int rot;
     private int score;
     private float fallCountTime;
     private float groundCountTime;
     private int[,] fallBlockStat = new int[4, 4];
+    private int[,] nextFallBlockStat = new int[4, 4];
     private int[,] blockStat = new int[21, 14];
     private int[,] wallBlockPos = new int[21, 14]
     {
@@ -111,16 +116,27 @@ public class GameController : MonoBehaviour
             }
         }
 
+        // 次落下ブロック初期設定
+        nextBlockNum = Random.Range(0, 10);
+        nextFallBlockStat = fallBlockController.SetFallBlock(nextBlockNum, rot);
+        for (int i = 0; i < 4; i++)
+        {
+            for (int j = 0; j < 4; j++)
+            {
+                nextFallBlockObj[j, i] = Instantiate(fallBlockPfb, new Vector3(nextFallBlockPosX + i, nextFallBlockPosY - j, 0), Quaternion.identity);
+            }
+        }
+
         // 配置ブロック初期設定
-        for(int i = 1; i < 11; i++)
+        for (int i = 1; i < 11; i++)
         {
             for (int j = 1; j < 18; j++)
             {
                 blockObj[j, i] = Instantiate(placementBlockPfb, new Vector3(i + OX, -j + OY, 0), Quaternion.identity);
-                blockObj[j, i].gameObject.SetActive(false);
             }
         }
-        
+
+        UpdateDisplay();
     }
 
     void Update()
@@ -262,6 +278,19 @@ public class GameController : MonoBehaviour
             }
         }
 
+        // 次落下ブロック生成
+        for (int i = 0; i < 4; i++)
+        {
+            for (int j = 0; j < 4; j++)
+            {
+                nextFallBlockObj[j, i].gameObject.SetActive(false);
+                if (nextFallBlockStat[j, i] == 2)
+                {
+                    nextFallBlockObj[j, i].gameObject.SetActive(true);
+                }
+            }
+        }
+
         // 配置ブロック生成
         for (int i = 1; i < 11; i++)
         {
@@ -275,14 +304,16 @@ public class GameController : MonoBehaviour
         }
     }
 
-    // 新しい落下ブロックの生成
+    // 新しい落下ブロックの設定
     private void NextBlockSet()
     {
         fallBlockPosX = fallBlockInitPosX;
         fallBlockPosY = fallBlockInitPosY;
-        blockNum = Random.Range(0, 8);
+        blockNum = nextBlockNum;
+        nextBlockNum = Random.Range(0, 10);
         rot = 0;
         fallBlockStat = fallBlockController.SetFallBlock(blockNum, rot);
+        nextFallBlockStat = fallBlockController.SetFallBlock(nextBlockNum, rot);
         gameStat = START;
         groundCountTime = 0;
     }
