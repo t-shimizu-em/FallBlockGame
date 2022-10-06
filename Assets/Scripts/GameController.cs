@@ -9,6 +9,10 @@ public class GameController : MonoBehaviour
     public GameObject wallBlockPfb;
     public GameObject fallBlockPfb;
     public GameObject placementBlockPfb;
+    public GameObject pausePanel;
+    public GameObject retryButton;
+    public GameObject titleButton;
+    public Button pauseButton;
     public AudioClip rotSe;
     public AudioClip moveSe;
     public AudioClip eraseSe;
@@ -80,11 +84,13 @@ public class GameController : MonoBehaviour
     private const int ERASE = 3;
     private bool downBanFlg; // false:下移動可 true:下移動禁止
     private bool rotBanFlg; // false:回転可 true:回転禁止
+    private bool pauseFlg; // true:一時停止
 
     
     void Start()
     {
         gameStat = START;
+        pauseFlg = false;
 
         // 壁ブロック生成
         blockStat = wallBlockPos;
@@ -136,11 +142,18 @@ public class GameController : MonoBehaviour
             }
         }
 
-        UpdateDisplay();
+        // 一時停止ボタン
+        pauseButton.onClick.AddListener(Pause);
     }
 
     void Update()
     {
+
+        if (pauseFlg)
+        {
+            return;
+        }
+
         switch (gameStat)
         {
             case START:
@@ -229,7 +242,7 @@ public class GameController : MonoBehaviour
         }
 
         // 壁際での回転禁止処理
-        if (JudgeContactRight(blockNum, rot, blockStat, fallBlockPosX, fallBlockPosY) || JudgeContactLeft(blockNum, rot, blockStat, fallBlockPosX, fallBlockPosY))
+        if (JudgeContactRight(blockNum, rot, blockStat, fallBlockPosX, fallBlockPosY) || JudgeContactLeft(blockNum, rot, blockStat, fallBlockPosX, fallBlockPosY) || gameStat == GAMEOVER)
         {
             rotBanFlg = true;
         }
@@ -246,6 +259,7 @@ public class GameController : MonoBehaviour
             if (rot == 4) rot = 0;
             fallBlockStat = fallBlockController.SetFallBlock(blockNum, rot);
         }
+
         // 落下ブロック落下速度上昇
         if (Input.GetButtonDown("Vertical") && !downBanFlg)
         {
@@ -408,7 +422,6 @@ public class GameController : MonoBehaviour
                 eraseFlg = true;
             }
         }
-        Debug.Log(eraseFlg);
         return eraseFlg;
     }
 
@@ -481,6 +494,25 @@ public class GameController : MonoBehaviour
         else
         {
             return false;
+        }
+    }
+
+    // 一時停止処理
+    public void Pause()
+    {
+        if (pauseFlg)
+        {
+            pauseFlg = false;
+            pausePanel.gameObject.SetActive(false);
+            retryButton.gameObject.SetActive(false);
+            titleButton.gameObject.SetActive(false);
+        }
+        else
+        {
+            pauseFlg = true;
+            pausePanel.gameObject.SetActive(true);
+            retryButton.gameObject.SetActive(true);
+            titleButton.gameObject.SetActive(true);
         }
     }
 }
