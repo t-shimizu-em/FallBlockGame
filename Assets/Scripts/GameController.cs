@@ -85,12 +85,14 @@ public class GameController : MonoBehaviour
     private bool downBanFlg; // false:下移動可 true:下移動禁止
     private bool rotBanFlg; // false:回転可 true:回転禁止
     private bool pauseFlg; // true:一時停止
+    private bool doEraseFlg; // true:ブロック消去中
 
     
     void Start()
     {
         gameStat = START;
         pauseFlg = false;
+        doEraseFlg = false;
 
         // 壁ブロック生成
         blockStat = wallBlockPos;
@@ -110,7 +112,7 @@ public class GameController : MonoBehaviour
         downBanFlg = false;
         fallBlockPosX = fallBlockInitPosX;
         fallBlockPosY = fallBlockInitPosY;
-        blockNum = Random.Range(0, 10);
+        blockNum = Random.Range(0, 7);
         rot = 0;
         fallBlockStat = fallBlockController.SetFallBlock(blockNum, rot);
         for (int i=0; i<4; i++)
@@ -123,7 +125,7 @@ public class GameController : MonoBehaviour
         }
 
         // 次落下ブロック初期設定
-        nextBlockNum = Random.Range(0, 10);
+        nextBlockNum = Random.Range(0, 7);
         nextFallBlockStat = fallBlockController.SetFallBlock(nextBlockNum, rot);
         for (int i = 0; i < 4; i++)
         {
@@ -144,92 +146,114 @@ public class GameController : MonoBehaviour
 
         // 一時停止ボタン
         pauseButton.onClick.AddListener(Pause);
+
+        UpdateDisplay();
     }
 
     void Update()
     {
-
-        if (pauseFlg)
+        if (!doEraseFlg)
         {
-            return;
-        }
+            if (pauseFlg)
+            {
+                return;
+            }
 
-        switch (gameStat)
-        {
-            case START:
-                downBanFlg = false;
-                rotBanFlg = false;
-                
-                // 1秒ごとにブロックを落下
-                fallCountTime += Time.deltaTime;
-                if (fallCountTime >= 1)
-                {
-                    fallBlockPosY++;
-                    fallCountTime = 0;
-                }
+            switch (gameStat)
+            {
+                case START:
+                    downBanFlg = false;
+                    rotBanFlg = false;
 
-                // 着地判定
-                if (JudgeGround(blockNum, rot, blockStat, fallBlockPosX, fallBlockPosY))
-                {
-                    gameStat = GROUND;
-                }
-                break;
-            case GROUND:
-                fallCountTime = 0;
-                groundCountTime += Time.deltaTime;
-                downBanFlg = true;
-                rotBanFlg = true;
-
-                // 落下ブロックの非着地判定
-                if (!JudgeGround(blockNum, rot, blockStat, fallBlockPosX, fallBlockPosY))
-                {
-                    groundCountTime = 0;
-                    gameStat = START;
-                }
-                if (groundCountTime >= 1)
-                {
-                    // 着地した落下ブロックを配置ブロックに置き換え
-                    for (int i=0; i<4; i++)
+                    // 1秒ごとにブロックを落下
+                    fallCountTime += Time.deltaTime;
+                    if (fallCountTime >= 1)
                     {
-                        for (int j=0; j<4; j++)
+                        fallBlockPosY++;
+                        fallCountTime = 0;
+                    }
+
+                    // 着地判定
+                    if (JudgeGround(blockNum, rot, blockStat, fallBlockPosX, fallBlockPosY))
+                    {
+                        gameStat = GROUND;
+                    }
+
+                    UpdateDisplay();
+
+                    break;
+                case GROUND:
+                    fallCountTime = 0;
+                    groundCountTime += Time.deltaTime;
+                    downBanFlg = true;
+                    rotBanFlg = true;
+
+                    // 落下ブロックの非着地判定
+                    if (!JudgeGround(blockNum, rot, blockStat, fallBlockPosX, fallBlockPosY))
+                    {
+                        groundCountTime = 0;
+                        gameStat = START;
+                    }
+                    if (groundCountTime >= 1)
+                    {
+                        // 着地した落下ブロックを配置ブロックに置き換え
+                        for (int i = 0; i < 4; i++)
                         {
-                            if (fallBlockStat[j, i] == 2)
+                            for (int j = 0; j < 4; j++)
                             {
-                                blockStat[j + fallBlockPosY, i + fallBlockPosX] = 3;
+                                if (fallBlockStat[j, i] == 2)
+                                {
+                                    blockStat[j + fallBlockPosY, i + fallBlockPosX] = 3;
+                                }
                             }
                         }
-                    }
 
-                    // 判定
-                    if (JudgeEraseRow())
-                    {
-                        gameStat = ERASE;
+                        // 配置ブロック描画
+                        for (int i = 1; i < 11; i++)
+                        {
+                            for (int j = 1; j < 18; j++)
+                            {
+                                if (blockStat[j, i] == 3)
+                                {
+                                    blockObj[j, i].gameObject.SetActive(true);
+                                }
+                                
+                            }
+                        }
+
+                        // 判定
+                        if (JudgeEraseRow())
+                        {
+                            gameStat = ERASE;
+                        }
+                        else if (JudgeGameOver())
+                        {
+                            gameStat = GAMEOVER;
+                        }
+                        else
+                        {
+                            NextBlockSet();
+                            UpdateDisplay();
+                        }
                     }
-                    else if (JudgeGameOver())
-                    {
-                        gameStat = GAMEOVER;
-                    }
-                    else
-                    {
-                        NextBlockSet();
-                    }
-                }
-                break;
-            case ERASE:
-                eraseAudioSource.PlayOneShot(eraseSe);
-                score += AddScore(BlockErase());
-                scoreText.text = "Score:" + score;
-                NextBlockSet();
-                gameStat = START;
-                break;
-            case GAMEOVER:
-                gameOverText.gameObject.SetActive(true);
-                break;
+                    break;
+                case ERASE:
+                    StartCoroutine(BlockErase());
+                    gameStat = START;
+                    break;
+                case GAMEOVER:
+                    gameOverText.gameObject.SetActive(true);
+                    retryButton.gameObject.SetActive(true);
+                    titleButton.gameObject.SetActive(true);
+                    pauseButton.gameObject.SetActive(false);
+                    break;
+            }
         }
 
         // 落下ブロックの水平移動操作
         if (Input.GetButtonDown("Horizontal"))
         {
+            Debug.Log("horizontal");
             moveAudioSource.PlayOneShot(moveSe);
             if (Input.GetAxis("Horizontal") > 0 && !JudgeContactRight(blockNum, rot, blockStat, fallBlockPosX, fallBlockPosY))
             {
@@ -239,6 +263,8 @@ public class GameController : MonoBehaviour
             {
                 fallBlockPosX--;
             }
+
+            UpdateDisplay();
         }
 
         // 壁際での回転禁止処理
@@ -270,8 +296,6 @@ public class GameController : MonoBehaviour
                 fallCountTime = 0;
             }
         }
-
-        UpdateDisplay();
     }
 
 
@@ -314,6 +338,10 @@ public class GameController : MonoBehaviour
                 {
                     blockObj[j, i].gameObject.SetActive(true);
                 }
+                else if (blockStat[j, i] == 0)
+                {
+                    blockObj[j, i].gameObject.SetActive(false);
+                }
             }
         }
     }
@@ -324,7 +352,7 @@ public class GameController : MonoBehaviour
         fallBlockPosX = fallBlockInitPosX;
         fallBlockPosY = fallBlockInitPosY;
         blockNum = nextBlockNum;
-        nextBlockNum = Random.Range(0, 10);
+        nextBlockNum = Random.Range(0, 7);
         rot = 0;
         fallBlockStat = fallBlockController.SetFallBlock(blockNum, rot);
         nextFallBlockStat = fallBlockController.SetFallBlock(nextBlockNum, rot);
@@ -426,21 +454,38 @@ public class GameController : MonoBehaviour
     }
 
     // ブロック消去
-    private int BlockErase()
+    private IEnumerator BlockErase()
     {
-        int eraseCount;
-
-        eraseCount = 0;
+        int eraseCount = 0;
+        int erasedCount = 0;
+        doEraseFlg = true;
         for (int j = 0; j < 18; j++)
         {
-            if (eraseRow[j] == true)
+            if (eraseRow[j])
             {
                 eraseCount++;
+                StartCoroutine(BlockEraseCoroutine(j, () =>
+                {
+                    erasedCount++;
+                }));
+            }
+        }
+
+        while (erasedCount < eraseCount)
+        {
+            yield return null;
+        }
+
+        for (int j = 0; j < 18; j++)
+        {
+            if (eraseRow[j])
+            {
                 // 1行消去
                 for (int i = 1; i < 11; i++)
                 {
                     blockStat[j, i] = 0;
                 }
+
                 // 消去分、下にずらす
                 for (int k = j; k > 0; k--)
                 {
@@ -448,13 +493,40 @@ public class GameController : MonoBehaviour
                     {
                         blockStat[k, i] = blockStat[k - 1, i];
                         blockStat[k - 1, i] = 0;
-                        blockObj[k, i].gameObject.SetActive(false);
                     }
                 }
             }
         }
 
-        return eraseCount;
+        doEraseFlg = false;
+        score += AddScore(eraseCount);
+        scoreText.text = "Score:" + score;
+        eraseAudioSource.PlayOneShot(eraseSe);
+        NextBlockSet();
+        UpdateDisplay();
+    }
+
+    // ブロック消去（コルーチン）
+    private IEnumerator BlockEraseCoroutine(int j, System.Action callback)
+    {
+        Color[] blockColor = new Color[11];
+
+        for (int i=1; i<11; i++)
+        {
+            blockColor[i] = blockObj[j, i].GetComponent<SpriteRenderer>().color;
+            blockObj[j, i].GetComponent<SpriteRenderer>().color = Color.white;
+        }
+
+        yield return new WaitForSeconds(0.5f);
+
+        for(int i = 1; i < 11; i++)
+        {
+            blockObj[j, i].GetComponent<SpriteRenderer>().color = blockColor[i];
+        }
+
+        yield return new WaitForSeconds(0.5f);
+
+        callback();
     }
 
     // スコア加算
