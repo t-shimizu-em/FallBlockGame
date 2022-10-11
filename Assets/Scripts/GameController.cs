@@ -553,7 +553,7 @@ public class GameController : MonoBehaviour
                 {
                     for (int i = 1; i < PLACEMENT_BLOCK_WIDTH; i++)
                     {
-                        blockPropList[k, i] = blockPropList[k - 1, i];
+                        blockPropList[k, i].Copy(blockPropList[k - 1, i]);
                     }
                 }
             }
@@ -646,23 +646,5 @@ public class GameController : MonoBehaviour
             retryButton.gameObject.SetActive(true);
             titleButton.gameObject.SetActive(true);
         }
-    }
-
-    public void BlockStatusDisplayToLog(BlockPropertyClass[,] list)
-    {
-        BlockPropertyClass[,] len = list;
-        for (int i = 0; i < len.GetLength(0); i++)
-        {
-            string str = "";
-            for (int j = 0; j < len.GetLength(1); j++)
-            {
-                str = str + len[i, j].BlockStatus + " ";
-            }
-            if (i > 14)
-            {
-                Debug.Log(str);
-            }
-        }
-        Debug.Log("-----------------------------------------------");
     }
 }
