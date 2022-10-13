@@ -2081,6 +2081,7 @@ MonoBehaviour:
   eraseAudioSource: {fileID: 925816590}
   scoreText: {fileID: 602807966}
   gameOverText: {fileID: 715159614}
+  scoreData: {fileID: 11400000, guid: 04ed42a5532244b1d85497d169af6565, type: 2}
   OX: -5
   OY: 8
 --- !u!1 &1967982499

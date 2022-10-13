@@ -19,6 +19,8 @@ public class GameController : MonoBehaviour
     public AudioSource eraseAudioSource;
     public Text scoreText;
     public Text gameOverText;
+    [SerializeField]
+    public ScoreData scoreData;
     public float OX, OY; // 原点座標
     public const int HIGHT = 21;
     public const int WIDTH = 14;
@@ -597,16 +599,16 @@ public class GameController : MonoBehaviour
         switch (rowNum)
         {
             case 1:
-                addScore = 100;
+                addScore = scoreData.singleScore;
                 break;
             case 2:
-                addScore = 300;
+                addScore = scoreData.doubleScore;
                 break;
             case 3:
-                addScore = 500;
+                addScore = scoreData.tripleScore;
                 break;
             case 4:
-                addScore = 1000;
+                addScore = scoreData.quadrupleScore;
                 break;
             default:
                 addScore = 0;
