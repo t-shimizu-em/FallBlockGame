@@ -1,8 +1,6 @@
 using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
-using UnityEngine.SceneManagement;
 
 public class GameController : MonoBehaviour
 {
@@ -36,6 +34,7 @@ public class GameController : MonoBehaviour
     // 3:落下ブロック
     // 4:配置ブロック
 
+    private BlockInfoList blockInfoList;
     private GameObject[,] blockObj = new GameObject[HIGHT, WIDTH];
     private GameObject[,] fallBlockObj = new GameObject[FALL_BLOCK_HIGHT, FALL_BLOCK_WIDTH];
     private GameObject[,] nextFallBlockObj = new GameObject[FALL_BLOCK_HIGHT, FALL_BLOCK_WIDTH];
@@ -95,14 +94,15 @@ public class GameController : MonoBehaviour
     
     void Start()
     {
+        blockInfoList = BlockInfoIO.LoadBlockList();
         gameStat = START;
         pauseFlg = false;
         doEraseFlg = false;
         fallCountTime = 0;
         groundCountTime = 0;
         downBanFlg = false;
-        blockNum = Random.Range(0, 7);
-        nextBlockNum = Random.Range(0, 7);
+        blockNum = Random.Range(0, blockInfoList.blockList.Count);
+        nextBlockNum = Random.Range(0, blockInfoList.blockList.Count);
         rot = 0;
 
         // 壁・地面ブロック初期設定
@@ -123,7 +123,7 @@ public class GameController : MonoBehaviour
         // 落下ブロック初期設定
         fallBlockPosX = fallBlockInitPosX;
         fallBlockPosY = fallBlockInitPosY;
-        fallBlockStat = blockController.SetFallBlock(blockNum, rot);
+        fallBlockStat = blockController.SetFallBlock(blockInfoList, blockNum, rot);
         for (int i=0; i<FALL_BLOCK_HIGHT; i++)
         {
             for (int j=0; j<FALL_BLOCK_WIDTH; j++)
@@ -134,14 +134,14 @@ public class GameController : MonoBehaviour
                 fallBlockObj[j, i].gameObject.SetActive(false);
                 if (fallBlockStat[j, i] == 3)
                 {
-                    blockProp.BlockColor = blockController.JudgeBlockColor(blockNum);
+                    blockProp.BlockColor = blockController.SetBlockColor(blockInfoList, blockNum);
                 }
                 fallBlockPropList[j, i] = blockProp;
             }
         }
 
         // 次落下ブロック初期設定
-        nextFallBlockStat = blockController.SetFallBlock(nextBlockNum, rot);
+        nextFallBlockStat = blockController.SetFallBlock(blockInfoList, nextBlockNum, rot);
         for (int i = 0; i < FALL_BLOCK_HIGHT; i++)
         {
             for (int j = 0; j < FALL_BLOCK_WIDTH; j++)
@@ -151,7 +151,7 @@ public class GameController : MonoBehaviour
                 nextFallBlockObj[j, i] = Instantiate(fallBlockPfb, new Vector3(nextFallBlockPosX + i, nextFallBlockPosY - j, 0), Quaternion.identity);
                 if (nextFallBlockStat[j, i] == 3)
                 {
-                    blockProp.BlockColor = blockController.JudgeBlockColor(nextBlockNum);
+                    blockProp.BlockColor = blockController.SetBlockColor(blockInfoList, nextBlockNum);
                 }
                 nextFallBlockPropList[j, i] = blockProp;
             }
@@ -310,7 +310,7 @@ public class GameController : MonoBehaviour
             rotAudioSource.PlayOneShot(rotSe);
             rot++;
             if (rot == 4) rot = 0;
-            fallBlockStat = blockController.SetFallBlock(blockNum, rot);
+            fallBlockStat = blockController.SetFallBlock(blockInfoList, blockNum, rot);
         }
 
         // 落下ブロック落下速度上昇
@@ -337,7 +337,7 @@ public class GameController : MonoBehaviour
                 blockProp.BlockStatus = fallBlockStat[j, i];
                 if (blockProp.BlockStatus == 3)
                 {
-                    blockProp.BlockColor = blockController.JudgeBlockColor(blockNum);
+                    blockProp.BlockColor = blockController.SetBlockColor(blockInfoList, blockNum);
                 }
                 fallBlockPropList[j, i] = blockProp;
             }
@@ -352,7 +352,7 @@ public class GameController : MonoBehaviour
                 blockProp.BlockStatus = nextFallBlockStat[j, i];
                 if (blockProp.BlockStatus == 3)
                 {
-                    blockProp.BlockColor = blockController.JudgeBlockColor(nextBlockNum);
+                    blockProp.BlockColor = blockController.SetBlockColor(blockInfoList, nextBlockNum);
                 }
                 nextFallBlockPropList[j, i] = blockProp;
             }
@@ -420,8 +420,8 @@ public class GameController : MonoBehaviour
         blockNum = nextBlockNum;
         nextBlockNum = Random.Range(0, 7);
         rot = 0;
-        fallBlockStat = blockController.SetFallBlock(blockNum, rot);
-        nextFallBlockStat = blockController.SetFallBlock(nextBlockNum, rot);
+        fallBlockStat = blockController.SetFallBlock(blockInfoList, blockNum, rot);
+        nextFallBlockStat = blockController.SetFallBlock(blockInfoList, nextBlockNum, rot);
         gameStat = START;
         groundCountTime = 0;
     }
@@ -430,7 +430,7 @@ public class GameController : MonoBehaviour
     private bool JudgeGround()
     {
         bool groundFlg = false;
-        int[,] block  = blockController.SetFallBlock(blockNum, rot);
+        int[,] block  = blockController.SetFallBlock(blockInfoList, blockNum, rot);
         for (int i=0; i<4; i++)
         {
             for (int j=3; j>=0; j--)
@@ -452,7 +452,7 @@ public class GameController : MonoBehaviour
     private bool JudgeContactRight()
     {
         bool contactFlg = false;
-        int[,] block = blockController.SetFallBlock(blockNum, rot);
+        int[,] block = blockController.SetFallBlock(blockInfoList, blockNum, rot);
         for (int j = 0; j < 4; j++)
         {
             for (int i = 3; i >= 0; i--)
@@ -474,7 +474,7 @@ public class GameController : MonoBehaviour
     private bool JudgeContactLeft()
     {
         bool contactFlg = false;
-        int[,] block = blockController.SetFallBlock(blockNum, rot);
+        int[,] block = blockController.SetFallBlock(blockInfoList, blockNum, rot);
         for (int j = 0; j < 4; j++)
         {
             for (int i = 0; i < 4; i++)

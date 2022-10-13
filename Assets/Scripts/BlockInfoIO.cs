@@ -1,16 +1,9 @@
-using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
 using System.IO;
 
-public class BlockInfoIO : MonoBehaviour
+public class BlockInfoIO
 {
-    public static string dataPath;
-
-    void Start()
-    {
-
-    }
+    public static string dataPath = Application.dataPath + "/Json/BlockList.json";
 
     public static BlockInfoList LoadBlockList()
     {

@@ -26,7 +26,6 @@ public class SettingController : MonoBehaviour
 
     void Start()
     {
-        BlockInfoIO.dataPath = Application.dataPath + "/Json/BlockList.json";
         red = ConvertInputValue(colorInputFieldRed.GetComponent<TMP_InputField>().text);
         green = ConvertInputValue(colorInputFieldGreen.GetComponent<TMP_InputField>().text);
         blue = ConvertInputValue(colorInputFieldBlue.GetComponent<TMP_InputField>().text);
@@ -41,7 +40,6 @@ public class SettingController : MonoBehaviour
     {
         red = ConvertInputValue(colorInputFieldRed.GetComponent<TMP_InputField>().text);
         blockColor = new Color32((byte)red, (byte)green, (byte)blue, 255);
-        //Debug.Log(blockColor);
         SetTileColor(blockInfoA);
         SetTileColor(blockInfoB);
         SetTileColor(blockInfoC);
@@ -171,41 +169,4 @@ public class SettingController : MonoBehaviour
 
         panel.gameObject.SetActive(false);
     }
-
-    //public int[,] SetBlockStatX(Toggle[] block)
-    //{
-    //    int i = 0;
-    //    int j = 0;
-    //    int[,] blockStat = new int[4, 4];
-    //    bool successFlg = false;
-
-    //    for (int k = 0; k < block.Length; k++)
-    //    {
-    //        if (block[k].isOn)
-    //        {
-    //            blockStat[i, j] = 3;
-    //            successFlg = true;
-    //        }
-    //        else
-    //        {
-    //            blockStat[i, j] = 0;
-    //        }
-
-    //        j++;
-
-    //        if (j == 4)
-    //        {
-    //            i++;
-    //            j = 0;
-    //        }
-
-    //    }
-
-    //    if (!successFlg)
-    //    {
-    //        blockStat = null;
-    //    }
-
-    //    return blockStat;
-    //}
 }
