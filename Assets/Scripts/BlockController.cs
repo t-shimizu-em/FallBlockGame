@@ -13,40 +13,37 @@ public class BlockController
                 fallBlock = SetBlockStat(blockInfoList.blockList[blockNum].blockStatA);
                 break;
             case 1:
-                if (blockInfoList.blockList[blockNum].blockStatB == null)
-                {
-                    fallBlock = SetBlockStat(blockInfoList.blockList[blockNum].blockStatA);
-                }
-                else
+                if (blockInfoList.blockList[blockNum].blockStatB.Length != 0)
                 {
                     fallBlock = SetBlockStat(blockInfoList.blockList[blockNum].blockStatB);
                 }
-                break;
-            case 2:
-                if (blockInfoList.blockList[blockNum].blockStatC == null)
+                else
                 {
                     fallBlock = SetBlockStat(blockInfoList.blockList[blockNum].blockStatA);
                 }
-                else
+                break;
+            case 2:
+                if (blockInfoList.blockList[blockNum].blockStatC.Length != 0)
                 {
                     fallBlock = SetBlockStat(blockInfoList.blockList[blockNum].blockStatC);
                 }
-                break;
-            case 3:
-                if (blockInfoList.blockList[blockNum].blockStatD == null)
+                else
                 {
                     fallBlock = SetBlockStat(blockInfoList.blockList[blockNum].blockStatA);
                 }
+                break;
+            case 3:
+                if (blockInfoList.blockList[blockNum].blockStatD.Length != 0)
+                {
+                    fallBlock = SetBlockStat(blockInfoList.blockList[blockNum].blockStatD);
+                }
+                else if (blockInfoList.blockList[blockNum].blockStatB.Length != 0)
+                {
+                    fallBlock = SetBlockStat(blockInfoList.blockList[blockNum].blockStatB);
+                }
                 else
                 {
-                    if (blockInfoList.blockList[blockNum].blockStatB == null)
-                    {
-                        fallBlock = SetBlockStat(blockInfoList.blockList[blockNum].blockStatA);
-                    }
-                    else
-                    {
-                        fallBlock = SetBlockStat(blockInfoList.blockList[blockNum].blockStatD);
-                    }
+                    fallBlock = SetBlockStat(blockInfoList.blockList[blockNum].blockStatA);
                 }
                 break;
         }
