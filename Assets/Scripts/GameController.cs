@@ -379,6 +379,11 @@ public class GameController : MonoBehaviour
     // ブロック消去（コルーチン1）
     private IEnumerator BlockErase()
     {
+        // ex. 
+        // var seq = new CoroutineSequence(this);
+        // seq.Insert(0, BlockErase());
+        // seq.Append(BlockErase());
+
         int eraseCount = 0;
         int erasedCount = 0;
         doEraseFlg = true;
