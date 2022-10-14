@@ -1,6 +1,7 @@
 using System.Collections;
 using UnityEngine;
 using UnityEngine.UI;
+using Common;
 
 public class GameController : MonoBehaviour
 {
@@ -22,12 +23,6 @@ public class GameController : MonoBehaviour
     [SerializeField]
     public ScoreData scoreData;
     public float OX, OY; // 原点座標
-    public const int HIGHT = 21;
-    public const int WIDTH = 14;
-    public const int PLACEMENT_BLOCK_HIGHT = 18;
-    public const int PLACEMENT_BLOCK_WIDTH = 11;
-    public const int FALL_BLOCK_HIGHT = 4;
-    public const int FALL_BLOCK_WIDTH = 4;
 
     // ブロックの状態
     // 0:空
@@ -37,28 +32,19 @@ public class GameController : MonoBehaviour
     // 4:配置ブロック
 
     private BlockInfoList blockInfoList;
-    private GameObject[,] blockObj = new GameObject[HIGHT, WIDTH];
-    private GameObject[,] fallBlockObj = new GameObject[FALL_BLOCK_HIGHT, FALL_BLOCK_WIDTH];
-    private GameObject[,] nextFallBlockObj = new GameObject[FALL_BLOCK_HIGHT, FALL_BLOCK_WIDTH];
-    BlockController blockController = new BlockController();
-    private static int nextFallBlockPosX = 14;
-    private static int nextFallBlockPosY = 2;
-    private static int fallBlockInitPosX = 4;
-    private static int fallBlockInitPosY = 0;
-    private static int fallBlockPosX;
-    private static int fallBlockPosY;
-    private int blockNum;
-    private int nextBlockNum;
-    private int rot;
+    private BlockController blockController = new BlockController();
+    private BlockProperty[,] blockPropList = new BlockProperty[GrovalConst.HIGHT, GrovalConst.WIDTH];
+    private BlockProperty[,] fallBlockPropList = new BlockProperty[GrovalConst.FALL_BLOCK_HIGHT, GrovalConst.FALL_BLOCK_WIDTH];
+    private BlockProperty[,] nextFallBlockPropList = new BlockProperty[GrovalConst.FALL_BLOCK_HIGHT, GrovalConst.FALL_BLOCK_WIDTH];
+    private GameObject[,] blockObj = new GameObject[GrovalConst.HIGHT, GrovalConst.WIDTH];
+    private GameObject[,] fallBlockObj = new GameObject[GrovalConst.FALL_BLOCK_HIGHT, GrovalConst.FALL_BLOCK_WIDTH];
+    private GameObject[,] nextFallBlockObj = new GameObject[GrovalConst.FALL_BLOCK_HIGHT, GrovalConst.FALL_BLOCK_WIDTH];
     private int score;
-    private float fallCountTime;
+    private int gameStat;
     private float groundCountTime;
-    private int[,] fallBlockStat = new int[FALL_BLOCK_HIGHT, FALL_BLOCK_WIDTH];
-    private int[,] nextFallBlockStat = new int[FALL_BLOCK_HIGHT, FALL_BLOCK_WIDTH];
-    private BlockPropertyClass[,] blockPropList = new BlockPropertyClass[HIGHT, WIDTH];
-    private BlockPropertyClass[,] fallBlockPropList = new BlockPropertyClass[FALL_BLOCK_HIGHT, FALL_BLOCK_WIDTH];
-    private BlockPropertyClass[,] nextFallBlockPropList = new BlockPropertyClass[FALL_BLOCK_HIGHT, FALL_BLOCK_WIDTH];
-    private int[,] wallBlockPos = new int[HIGHT, WIDTH]
+    private int[,] fallBlockStat = new int[GrovalConst.FALL_BLOCK_HIGHT, GrovalConst.FALL_BLOCK_WIDTH];
+    private int[,] nextFallBlockStat = new int[GrovalConst.FALL_BLOCK_HIGHT, GrovalConst.FALL_BLOCK_WIDTH];
+    private int[,] wallBlockPos = new int[GrovalConst.HIGHT, GrovalConst.WIDTH]
     {
         {1,0,0,0,0,0,0,0,0,0,0,1,0,0},
         {1,0,0,0,0,0,0,0,0,0,0,1,0,0},
@@ -82,37 +68,32 @@ public class GameController : MonoBehaviour
         {0,0,0,0,0,0,0,0,0,0,0,0,0,0},
         {0,0,0,0,0,0,0,0,0,0,0,0,0,0}
     };
-    private int gameStat;
-    private bool[] eraseRow =　new bool[18];
     private const int GAMEOVER = 0;
     private const int START = 1;
     private const int GROUND = 2;
     private const int ERASE = 3;
-    private bool downBanFlg; // false:下移動可 true:下移動禁止
-    private bool rotBanFlg; // false:回転可 true:回転禁止
     private bool pauseFlg; // true:一時停止
     private bool doEraseFlg; // true:ブロック消去中
 
-    
     void Start()
     {
         blockInfoList = BlockInfoIO.LoadBlockList();
         gameStat = START;
+        blockController.fallCountTime = 0;
+        groundCountTime = 0;
         pauseFlg = false;
         doEraseFlg = false;
-        fallCountTime = 0;
-        groundCountTime = 0;
-        downBanFlg = false;
-        blockNum = Random.Range(0, blockInfoList.blockList.Count);
-        nextBlockNum = Random.Range(0, blockInfoList.blockList.Count);
-        rot = 0;
+        blockController.rot = 0;
+        blockController.downBanFlg = false;
+        blockController.blockNum = Random.Range(0, blockInfoList.blockList.Count);
+        blockController.nextBlockNum = Random.Range(0, blockInfoList.blockList.Count);
 
         // 壁・地面ブロック初期設定
-        for (int i = 0; i < WIDTH; i++)
+        for (int i = 0; i < GrovalConst.WIDTH; i++)
         {
-            for (int j = 0; j < HIGHT; j++)
+            for (int j = 0; j < GrovalConst.HIGHT; j++)
             {
-                BlockPropertyClass blockProp = new BlockPropertyClass();
+                BlockProperty blockProp = new BlockProperty();
                 blockProp.BlockStatus = wallBlockPos[j, i];
                 if (blockProp.BlockStatus == 1 || blockProp.BlockStatus == 2) {
                     Instantiate(wallBlockPfb, new Vector3(i + OX, -j + OY, 0), Quaternion.identity);
@@ -123,46 +104,46 @@ public class GameController : MonoBehaviour
         }
 
         // 落下ブロック初期設定
-        fallBlockPosX = fallBlockInitPosX;
-        fallBlockPosY = fallBlockInitPosY;
-        fallBlockStat = blockController.SetFallBlock(blockInfoList, blockNum, rot);
-        for (int i=0; i<FALL_BLOCK_HIGHT; i++)
+        blockController.fallBlockPosX = GrovalConst.FALL_BLOCK_INIT_POS_X;
+        blockController.fallBlockPosY = GrovalConst.FALL_BLOCK_INIT_POS_Y;
+        fallBlockStat = blockController.SetFallBlock(blockInfoList);
+        for (int i=0; i<GrovalConst.FALL_BLOCK_HIGHT; i++)
         {
-            for (int j=0; j<FALL_BLOCK_WIDTH; j++)
+            for (int j=0; j<GrovalConst.FALL_BLOCK_WIDTH; j++)
             {
-                BlockPropertyClass blockProp = new BlockPropertyClass();
+                BlockProperty blockProp = new BlockProperty();
                 blockProp.BlockStatus = fallBlockStat[j, i];
-                fallBlockObj[j, i] = Instantiate(fallBlockPfb, new Vector3(fallBlockPosX + i + OX, -fallBlockPosY - j + OY, 0), Quaternion.identity);
+                fallBlockObj[j, i] = Instantiate(fallBlockPfb, new Vector3(blockController.fallBlockPosX + i + OX, -blockController.fallBlockPosY - j + OY, 0), Quaternion.identity);
                 fallBlockObj[j, i].gameObject.SetActive(false);
                 if (fallBlockStat[j, i] == 3)
                 {
-                    blockProp.BlockColor = blockController.SetBlockColor(blockInfoList, blockNum);
+                    blockProp.BlockColor = blockController.SetBlockColor(blockInfoList);
                 }
                 fallBlockPropList[j, i] = blockProp;
             }
         }
 
         // 次落下ブロック初期設定
-        nextFallBlockStat = blockController.SetFallBlock(blockInfoList, nextBlockNum, rot);
-        for (int i = 0; i < FALL_BLOCK_HIGHT; i++)
+        nextFallBlockStat = blockController.SetFallBlock(blockInfoList, true);
+        for (int i = 0; i < GrovalConst.FALL_BLOCK_HIGHT; i++)
         {
-            for (int j = 0; j < FALL_BLOCK_WIDTH; j++)
+            for (int j = 0; j < GrovalConst.FALL_BLOCK_WIDTH; j++)
             {
-                BlockPropertyClass blockProp = new BlockPropertyClass();
+                BlockProperty blockProp = new BlockProperty();
                 blockProp.BlockStatus = nextFallBlockStat[j, i];
-                nextFallBlockObj[j, i] = Instantiate(fallBlockPfb, new Vector3(nextFallBlockPosX + i, nextFallBlockPosY - j, 0), Quaternion.identity);
+                nextFallBlockObj[j, i] = Instantiate(fallBlockPfb, new Vector3(GrovalConst.NEXT_FALL_BLOCK_POS_X + i, GrovalConst.NEXT_FALL_BLOCK_POS_Y - j, 0), Quaternion.identity);
                 if (nextFallBlockStat[j, i] == 3)
                 {
-                    blockProp.BlockColor = blockController.SetBlockColor(blockInfoList, nextBlockNum);
+                    blockProp.BlockColor = blockController.SetBlockColor(blockInfoList, true);
                 }
                 nextFallBlockPropList[j, i] = blockProp;
             }
         }
 
         // 配置ブロック初期設定
-        for (int i = 1; i < PLACEMENT_BLOCK_WIDTH; i++)
+        for (int i = 1; i < GrovalConst.PLACEMENT_BLOCK_WIDTH; i++)
         {
-            for (int j = 1; j < PLACEMENT_BLOCK_HIGHT; j++)
+            for (int j = 1; j < GrovalConst.PLACEMENT_BLOCK_HIGHT; j++)
             {
                 blockObj[j, i] = Instantiate(placementBlockPfb, new Vector3(i + OX, -j + OY, 0), Quaternion.identity);
                 blockObj[j, i].gameObject.SetActive(false);
@@ -187,19 +168,19 @@ public class GameController : MonoBehaviour
             switch (gameStat)
             {
                 case START:
-                    downBanFlg = false;
-                    rotBanFlg = false;
+                    blockController.downBanFlg = false;
+                    blockController.rotBanFlg = false;
 
                     // 1秒ごとにブロックを落下
-                    fallCountTime += Time.deltaTime;
-                    if (fallCountTime >= 1)
+                    blockController.fallCountTime += Time.deltaTime;
+                    if (blockController.fallCountTime >= 1)
                     {
-                        fallBlockPosY++;
-                        fallCountTime = 0;
+                        blockController.fallBlockPosY++;
+                        blockController.fallCountTime = 0;
                     }
 
                     // 着地判定
-                    if (JudgeGround())
+                    if (blockController.JudgeGround(blockPropList, blockInfoList))
                     {
                         gameStat = GROUND;
                     }
@@ -209,13 +190,13 @@ public class GameController : MonoBehaviour
 
                     break;
                 case GROUND:
-                    fallCountTime = 0;
+                    blockController.fallCountTime = 0;
                     groundCountTime += Time.deltaTime;
-                    downBanFlg = true;
-                    rotBanFlg = true;
+                    blockController.downBanFlg = true;
+                    blockController.rotBanFlg = true;
 
                     // 落下ブロックの非着地判定
-                    if (!JudgeGround())
+                    if (!blockController.JudgeGround(blockPropList, blockInfoList))
                     {
                         groundCountTime = 0;
                         gameStat = START;
@@ -224,22 +205,22 @@ public class GameController : MonoBehaviour
                     if (groundCountTime >= 1)
                     {
                         // 着地した落下ブロックを配置ブロックに置き換え
-                        for (int i = 0; i < FALL_BLOCK_HIGHT; i++)
+                        for (int i = 0; i < GrovalConst.FALL_BLOCK_HIGHT; i++)
                         {
-                            for (int j = 0; j < FALL_BLOCK_WIDTH; j++)
+                            for (int j = 0; j < GrovalConst.FALL_BLOCK_WIDTH; j++)
                             {
                                 if (fallBlockPropList[j, i].BlockStatus == 3)
                                 {
-                                    blockPropList[j + fallBlockPosY, i + fallBlockPosX].BlockColor = fallBlockPropList[j, i].BlockColor;
-                                    blockPropList[j + fallBlockPosY, i + fallBlockPosX].BlockStatus = 4;
+                                    blockPropList[j + blockController.fallBlockPosY, i + blockController.fallBlockPosX].BlockColor = fallBlockPropList[j, i].BlockColor;
+                                    blockPropList[j + blockController.fallBlockPosY, i + blockController.fallBlockPosX].BlockStatus = 4;
                                 }
                             }
                         }
 
                         // 配置ブロック描画
-                        for (int i = 1; i < PLACEMENT_BLOCK_WIDTH; i++)
+                        for (int i = 1; i < GrovalConst.PLACEMENT_BLOCK_WIDTH; i++)
                         {
-                            for (int j = 1; j < PLACEMENT_BLOCK_HIGHT; j++)
+                            for (int j = 1; j < GrovalConst.PLACEMENT_BLOCK_HIGHT; j++)
                             {
                                 if (blockPropList[j, i].BlockStatus == 4)
                                 {
@@ -251,18 +232,17 @@ public class GameController : MonoBehaviour
                         }
 
                         // 判定
-                        if (JudgeEraseRow())
+                        if (blockController.JudgeEraseRow(blockPropList))
                         {
                             gameStat = ERASE;
                         }
-                        else if (JudgeGameOver())
+                        else if (blockController.JudgeGameOver(blockPropList, GrovalConst.FALL_BLOCK_INIT_POS_X, GrovalConst.FALL_BLOCK_INIT_POS_Y))
                         {
                             gameStat = GAMEOVER;
                         }
                         else
                         {
-                            NextBlockSet();
-                            gameStat = START;
+                            Init();
                         }
                     }
                     break;
@@ -282,79 +262,63 @@ public class GameController : MonoBehaviour
         // 落下ブロックの水平移動操作
         if (Input.GetButtonDown("Horizontal"))
         {
+            blockController.HorizontalMove(blockPropList, blockInfoList);
             moveAudioSource.PlayOneShot(moveSe);
-            if (Input.GetAxis("Horizontal") > 0 && !JudgeContactRight())
-            {
-                fallBlockPosX++;
-            }
-            else if (Input.GetAxis("Horizontal") < 0 && !JudgeContactLeft())
-            {
-                fallBlockPosX--;
-            }
-
             UpdateFallBlockProperty();
             UpdateDisplay();
         }
 
         // 壁際での回転禁止処理
-        if (JudgeContactRight() || JudgeContactLeft() || gameStat == GAMEOVER)
+        if (blockController.JudgeContactRight(blockPropList, blockInfoList) || blockController.JudgeContactLeft(blockPropList, blockInfoList) || gameStat == GAMEOVER)
         {
-            rotBanFlg = true;
+            blockController.rotBanFlg = true;
         }
         else
         {
-            rotBanFlg = false;
+            blockController.rotBanFlg = false;
         }
 
         // 落下ブロックの回転操作
-        if (Input.GetButtonDown("Jump") && !rotBanFlg)
+        if (Input.GetButtonDown("Jump") && !blockController.rotBanFlg)
         {
+            fallBlockStat = blockController.RotationMove(fallBlockStat, blockInfoList);
             rotAudioSource.PlayOneShot(rotSe);
-            rot++;
-            if (rot == 4) rot = 0;
-            fallBlockStat = blockController.SetFallBlock(blockInfoList, blockNum, rot);
         }
 
         // 落下ブロック落下速度上昇
-        if (Input.GetButtonDown("Vertical") && !downBanFlg)
+        if (Input.GetButtonDown("Vertical") && !blockController.downBanFlg)
         {
+            blockController.VerticalMove();
             moveAudioSource.PlayOneShot(moveSe);
-            if (Input.GetAxis("Vertical") < 0)
-            {
-                fallBlockPosY++;
-                fallCountTime = 0;
-            }
         }
     }
 
     // 落下ブロック情報設定
     private void UpdateFallBlockProperty()
     {
-        // 落下ブロック情報設定
-        for (int i = 0; i < FALL_BLOCK_HIGHT; i++)
+        for (int i = 0; i < GrovalConst.FALL_BLOCK_HIGHT; i++)
         {
-            for (int j = 0; j < FALL_BLOCK_WIDTH; j++)
+            for (int j = 0; j < GrovalConst.FALL_BLOCK_WIDTH; j++)
             {
-                BlockPropertyClass blockProp = fallBlockPropList[j, i];
+                BlockProperty blockProp = fallBlockPropList[j, i];
                 blockProp.BlockStatus = fallBlockStat[j, i];
                 if (blockProp.BlockStatus == 3)
                 {
-                    blockProp.BlockColor = blockController.SetBlockColor(blockInfoList, blockNum);
+                    blockProp.BlockColor = blockController.SetBlockColor(blockInfoList);
                 }
                 fallBlockPropList[j, i] = blockProp;
             }
         }
 
-        // 次落下ブロック情報設定
-        for (int i = 0; i < FALL_BLOCK_HIGHT; i++)
+        for (int i = 0; i < GrovalConst.FALL_BLOCK_HIGHT; i++)
         {
-            for (int j = 0; j < FALL_BLOCK_WIDTH; j++)
+            for (int j = 0; j < GrovalConst.FALL_BLOCK_WIDTH; j++)
             {
-                BlockPropertyClass blockProp = nextFallBlockPropList[j, i];
+                BlockProperty blockProp = nextFallBlockPropList[j, i];
                 blockProp.BlockStatus = nextFallBlockStat[j, i];
                 if (blockProp.BlockStatus == 3)
                 {
-                    blockProp.BlockColor = blockController.SetBlockColor(blockInfoList, nextBlockNum);
+                    blockProp.BlockColor = blockController.SetBlockColor(blockInfoList, true);
                 }
                 nextFallBlockPropList[j, i] = blockProp;
             }
@@ -365,28 +329,28 @@ public class GameController : MonoBehaviour
     private void UpdateDisplay()
     {
         // 落下ブロック生成
-        for (int i = 0; i < FALL_BLOCK_HIGHT; i++)
+        for (int i = 0; i < GrovalConst.FALL_BLOCK_HIGHT; i++)
         {
-            for (int j = 0; j < FALL_BLOCK_WIDTH; j++)
+            for (int j = 0; j < GrovalConst.FALL_BLOCK_WIDTH; j++)
             {
                 fallBlockObj[j, i].gameObject.SetActive(false);
-                BlockPropertyClass blockProp = fallBlockPropList[j, i];
+                BlockProperty blockProp = fallBlockPropList[j, i];
                 if (blockProp.BlockStatus == 3)
                 {
                     fallBlockObj[j, i].gameObject.SetActive(true);
                     fallBlockObj[j, i].GetComponent<SpriteRenderer>().color = fallBlockPropList[j, i].BlockColor;
-                    fallBlockObj[j, i].gameObject.transform.position = new Vector3(fallBlockPosX + i + OX, -fallBlockPosY - j + OY, 0);
+                    fallBlockObj[j, i].gameObject.transform.position = new Vector3(blockController.fallBlockPosX + i + OX, -blockController.fallBlockPosY - j + OY, 0);
                 }
             }
         }
 
         // 次落下ブロック生成
-        for (int i = 0; i < FALL_BLOCK_HIGHT; i++)
+        for (int i = 0; i < GrovalConst.FALL_BLOCK_HIGHT; i++)
         {
-            for (int j = 0; j < FALL_BLOCK_WIDTH; j++)
+            for (int j = 0; j < GrovalConst.FALL_BLOCK_WIDTH; j++)
             {
                 nextFallBlockObj[j, i].gameObject.SetActive(false);
-                BlockPropertyClass blockProp = nextFallBlockPropList[j, i];
+                BlockProperty blockProp = nextFallBlockPropList[j, i];
                 if (blockProp.BlockStatus == 3)
                 {
                     nextFallBlockObj[j, i].gameObject.SetActive(true);
@@ -396,11 +360,11 @@ public class GameController : MonoBehaviour
         }
 
         // 配置ブロック生成
-        for (int i = 1; i < PLACEMENT_BLOCK_WIDTH; i++)
+        for (int i = 1; i < GrovalConst.PLACEMENT_BLOCK_WIDTH; i++)
         {
-            for (int j = 1; j < PLACEMENT_BLOCK_HIGHT; j++)
+            for (int j = 1; j < GrovalConst.PLACEMENT_BLOCK_HIGHT; j++)
             {
-                BlockPropertyClass blockProp = blockPropList[j, i];
+                BlockProperty blockProp = blockPropList[j, i];
                 if (blockProp.BlockStatus == 4)
                 {
                     blockObj[j, i].gameObject.SetActive(true);
@@ -414,119 +378,15 @@ public class GameController : MonoBehaviour
         }
     }
 
-    // 新しい落下ブロックの設定
-    private void NextBlockSet()
-    {
-        fallBlockPosX = fallBlockInitPosX;
-        fallBlockPosY = fallBlockInitPosY;
-        blockNum = nextBlockNum;
-        nextBlockNum = Random.Range(0, 7);
-        rot = 0;
-        fallBlockStat = blockController.SetFallBlock(blockInfoList, blockNum, rot);
-        nextFallBlockStat = blockController.SetFallBlock(blockInfoList, nextBlockNum, rot);
-        gameStat = START;
-        groundCountTime = 0;
-    }
-
-    // 着地判定
-    private bool JudgeGround()
-    {
-        bool groundFlg = false;
-        int[,] block  = blockController.SetFallBlock(blockInfoList, blockNum, rot);
-        for (int i=0; i<4; i++)
-        {
-            for (int j=3; j>=0; j--)
-            {
-                if (block[j, i] == 3)
-                {
-                    if (blockPropList[fallBlockPosY + j + 1, fallBlockPosX + i].BlockStatus == 2 || blockPropList[fallBlockPosY + j + 1, fallBlockPosX + i].BlockStatus == 4)
-                    {
-                        groundFlg = true;
-                        break;
-                    }
-                }
-            }
-        }
-        return groundFlg;
-    }
-
-    // 右側壁当たり判定
-    private bool JudgeContactRight()
-    {
-        bool contactFlg = false;
-        int[,] block = blockController.SetFallBlock(blockInfoList, blockNum, rot);
-        for (int j = 0; j < 4; j++)
-        {
-            for (int i = 3; i >= 0; i--)
-            {
-                if (block[j, i] == 3)
-                {
-                    if (blockPropList[fallBlockPosY + j, fallBlockPosX + i + 1].BlockStatus == 1 || blockPropList[fallBlockPosY + j, fallBlockPosX + i + 1].BlockStatus == 4)
-                    {
-                        contactFlg = true;
-                        break;
-                    }
-                }
-            }
-        }
-        return contactFlg;
-    }
-
-    // 左側壁当たり判定
-    private bool JudgeContactLeft()
-    {
-        bool contactFlg = false;
-        int[,] block = blockController.SetFallBlock(blockInfoList, blockNum, rot);
-        for (int j = 0; j < 4; j++)
-        {
-            for (int i = 0; i < 4; i++)
-            {
-                if (block[j, i] == 3)
-                {
-                    if (blockPropList[fallBlockPosY + j, fallBlockPosX + i - 1].BlockStatus == 1 || blockPropList[fallBlockPosY + j, fallBlockPosX + i - 1].BlockStatus == 4)
-                    {
-                        contactFlg = true;
-                        break;
-                    }
-                }
-            }
-        }
-        return contactFlg;
-    }
-
-    // ブロック消去判定
-    private bool JudgeEraseRow()
-    {
-        bool eraseFlg = false;
-        for (int j=0; j<18; j++)
-        {
-            eraseRow[j] = false;
-            bool buff = true;
-            for (int i=0; i<11; i++)
-            {
-                if (blockPropList[j,i].BlockStatus == 0)
-                {
-                    buff = false;
-                }
-            }
-            if (buff)
-            {
-                eraseRow[j] = true;
-                eraseFlg = true;
-            }
-        }
-        return eraseFlg;
-    }
-
     // ブロック消去（コルーチン1）
     private IEnumerator BlockErase()
     {
         int eraseCount = 0;
         int erasedCount = 0;
         doEraseFlg = true;
-        for (int j = 0; j < 18; j++)
+        for (int j = 0; j < GrovalConst.PLACEMENT_BLOCK_HIGHT; j++)
         {
-            if (eraseRow[j])
+            if (blockController.eraseRow[j])
             {
                 eraseCount++;
                 StartCoroutine(BlockEraseCoroutine(j, () =>
@@ -541,19 +401,19 @@ public class GameController : MonoBehaviour
             yield return null;
         }
 
-        for (int j = 0; j < PLACEMENT_BLOCK_HIGHT; j++)
+        for (int j = 0; j < GrovalConst.PLACEMENT_BLOCK_HIGHT; j++)
         {
-            if (eraseRow[j])
+            if (blockController.eraseRow[j])
             {
                 // 1行消去
-                for (int i = 1; i < PLACEMENT_BLOCK_WIDTH; i++)
+                for (int i = 1; i < GrovalConst.PLACEMENT_BLOCK_WIDTH; i++)
                 {
                     blockPropList[j, i].BlockStatus = 0;
                 }
                 // 消去分、下にずらす
                 for (int k = j; k > 0; k--)
                 {
-                    for (int i = 1; i < PLACEMENT_BLOCK_WIDTH; i++)
+                    for (int i = 1; i < GrovalConst.PLACEMENT_BLOCK_WIDTH; i++)
                     {
                         blockPropList[k, i].Copy(blockPropList[k - 1, i]);
                     }
@@ -565,7 +425,7 @@ public class GameController : MonoBehaviour
         score += AddScore(eraseCount);
         scoreText.text = "Score:" + score;
         eraseAudioSource.PlayOneShot(eraseSe);
-        NextBlockSet();
+        Init();
     }
 
     // ブロック消去（コルーチン2）
@@ -573,7 +433,7 @@ public class GameController : MonoBehaviour
     {
         Color[] blockColor = new Color[11];
 
-        for (int i=1; i<11; i++)
+        for (int i=1; i<GrovalConst.PLACEMENT_BLOCK_WIDTH; i++)
         {
             blockColor[i] = blockObj[j, i].GetComponent<SpriteRenderer>().color;
             blockObj[j, i].GetComponent<SpriteRenderer>().color = Color.white;
@@ -581,7 +441,7 @@ public class GameController : MonoBehaviour
 
         yield return new WaitForSeconds(0.5f);
 
-        for(int i = 1; i < 11; i++)
+        for(int i = 1; i < GrovalConst.PLACEMENT_BLOCK_WIDTH; i++)
         {
             blockObj[j, i].GetComponent<SpriteRenderer>().color = blockColor[i];
         }
@@ -618,17 +478,14 @@ public class GameController : MonoBehaviour
         return addScore;
     }
 
-    //ゲームオーバー判定
-    private bool JudgeGameOver()
+    private void Init()
     {
-        if (blockPropList[fallBlockInitPosY, fallBlockInitPosX].BlockStatus == 4)
-        {
-            return true;
-        }
-        else
-        {
-            return false;
-        }
+        blockController.NextBlockInfoSet();
+        blockController.nextBlockNum = Random.Range(0, blockInfoList.blockList.Count);
+        fallBlockStat = blockController.SetFallBlock(blockInfoList);
+        nextFallBlockStat = blockController.SetFallBlock(blockInfoList, true);
+        groundCountTime = 0;
+        gameStat = START;
     }
 
     // 一時停止処理
