@@ -97,7 +97,6 @@ public class GameController : MonoBehaviour
                 blockProp.BlockStatus = wallBlockPos[j, i];
                 if (blockProp.BlockStatus == 1 || blockProp.BlockStatus == 2) {
                     Instantiate(wallBlockPfb, new Vector3(i + OX, -j + OY, 0), Quaternion.identity);
-
                 }
                 blockPropList[j, i] = blockProp;
             }
@@ -227,7 +226,6 @@ public class GameController : MonoBehaviour
                                     blockObj[j, i].GetComponent<SpriteRenderer>().color = blockPropList[j, i].BlockColor;
                                     blockObj[j, i].gameObject.SetActive(true);
                                 }
-                                
                             }
                         }
 

@@ -65,7 +65,6 @@ public class BlockController
                     break;
             }
         }
-
         return fallBlock;
     }
 
@@ -164,7 +163,6 @@ public class BlockController
         blockNum = nextBlockNum;
         rot = 0;
     }
-
 
     // 着地判定
     public bool JudgeGround(BlockProperty[,] blockPropList, BlockInfoList blockInfoList)
