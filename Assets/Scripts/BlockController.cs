@@ -1,250 +1,112 @@
 ﻿using System;
+using System.Collections;
 using UnityEngine;
 using Common;
+using UnityEngine.SocialPlatforms.Impl;
 
 public class BlockController
 {
-    public int fallBlockPosX;
-    public int fallBlockPosY;
-    public int blockNum;
-    public int nextBlockNum;
-    public int rot;
-    public float fallCountTime;
+    public bool doEraseFlg; // true:ブロック消去中
     public bool[] eraseRow = new bool[18];
-    public bool downBanFlg; // false:下移動可 true:下移動禁止
-    public bool rotBanFlg; // false:回転可 true:回転禁止
+    public int eraseCount = 0;
+    public BlockProperty[,] blockPropList = new BlockProperty[GlobalConst.HIGHT, GlobalConst.WIDTH];
+    public GameObject[,] blockObj = new GameObject[GlobalConst.HIGHT, GlobalConst.WIDTH];
 
-    public int[,] SetFallBlock(BlockInfoList blockInfoList, bool nextBlockFlg = false)
+    private int[,] wallBlockPos = new int[GlobalConst.HIGHT, GlobalConst.WIDTH]
     {
-        int[,] fallBlock = new int[4, 4];
+        {1,0,0,0,0,0,0,0,0,0,0,1,0,0},
+        {1,0,0,0,0,0,0,0,0,0,0,1,0,0},
+        {1,0,0,0,0,0,0,0,0,0,0,1,0,0},
+        {1,0,0,0,0,0,0,0,0,0,0,1,0,0},
+        {1,0,0,0,0,0,0,0,0,0,0,1,0,0},
+        {1,0,0,0,0,0,0,0,0,0,0,1,0,0},
+        {1,0,0,0,0,0,0,0,0,0,0,1,0,0},
+        {1,0,0,0,0,0,0,0,0,0,0,1,0,0},
+        {1,0,0,0,0,0,0,0,0,0,0,1,0,0},
+        {1,0,0,0,0,0,0,0,0,0,0,1,0,0},
+        {1,0,0,0,0,0,0,0,0,0,0,1,0,0},
+        {1,0,0,0,0,0,0,0,0,0,0,1,0,0},
+        {1,0,0,0,0,0,0,0,0,0,0,1,0,0},
+        {1,0,0,0,0,0,0,0,0,0,0,1,0,0},
+        {1,0,0,0,0,0,0,0,0,0,0,1,0,0},
+        {1,0,0,0,0,0,0,0,0,0,0,1,0,0},
+        {1,0,0,0,0,0,0,0,0,0,0,1,0,0},
+        {1,0,0,0,0,0,0,0,0,0,0,1,0,0},
+        {1,2,2,2,2,2,2,2,2,2,2,1,0,0},
+        {0,0,0,0,0,0,0,0,0,0,0,0,0,0},
+        {0,0,0,0,0,0,0,0,0,0,0,0,0,0}
+    };
+    private Color[] blockColor = new Color[11];
 
-        if (nextBlockFlg)
+    public void CreateWallBlock(GameObject wallBlockPfb)
+    {
+        for (int i = 0; i < GlobalConst.WIDTH; i++)
         {
-            fallBlock = SetBlockStat(blockInfoList.blockList[nextBlockNum].blockStatA);
-        }
-        else
-        {
-            switch (rot)
+            for (int j = 0; j < GlobalConst.HIGHT; j++)
             {
-                case 0:
-                    fallBlock = SetBlockStat(blockInfoList.blockList[blockNum].blockStatA);
-                    break;
-                case 1:
-                    if (blockInfoList.blockList[blockNum].blockStatB.Length != 0)
-                    {
-                        fallBlock = SetBlockStat(blockInfoList.blockList[blockNum].blockStatB);
-                    }
-                    else
-                    {
-                        fallBlock = SetBlockStat(blockInfoList.blockList[blockNum].blockStatA);
-                    }
-                    break;
-                case 2:
-                    if (blockInfoList.blockList[blockNum].blockStatC.Length != 0)
-                    {
-                        fallBlock = SetBlockStat(blockInfoList.blockList[blockNum].blockStatC);
-                    }
-                    else
-                    {
-                        fallBlock = SetBlockStat(blockInfoList.blockList[blockNum].blockStatA);
-                    }
-                    break;
-                case 3:
-                    if (blockInfoList.blockList[blockNum].blockStatD.Length != 0)
-                    {
-                        fallBlock = SetBlockStat(blockInfoList.blockList[blockNum].blockStatD);
-                    }
-                    else if (blockInfoList.blockList[blockNum].blockStatB.Length != 0)
-                    {
-                        fallBlock = SetBlockStat(blockInfoList.blockList[blockNum].blockStatB);
-                    }
-                    else
-                    {
-                        fallBlock = SetBlockStat(blockInfoList.blockList[blockNum].blockStatA);
-                    }
-                    break;
-            }
-        }
-        return fallBlock;
-    }
+                // 1マスごとにインスタンス作成し、各情報を保持
+                BlockProperty blockProp = new BlockProperty();
+                blockProp.BlockStatus = wallBlockPos[j, i];
+                blockPropList[j, i] = blockProp;
 
-    public int[,] SetBlockStat(int[] oneDimensionArray)
-    {
-        int i = 0;
-        int j = 0;
-        int[,] blockStat = new int[4, 4];
-
-        for (int k = 0; k < oneDimensionArray.Length; k++)
-        {
-            if (oneDimensionArray[k] == 3)
-            {
-                blockStat[i, j] = 3;
-            }
-            else
-            {
-                blockStat[i, j] = 0;
-            }
-
-            j++;
-
-            if (j == 4)
-            {
-                i++;
-                j = 0;
-            }
-
-        }
-
-        return blockStat;
-    }
-
-    public Color SetBlockColor(BlockInfoList blockInfoList, bool nextBlockFlg = false)
-    {
-        int red;
-        int green;
-        int blue;
-
-        if (nextBlockFlg)
-        {
-            red = blockInfoList.blockList[nextBlockNum].red;
-            green = blockInfoList.blockList[nextBlockNum].green;
-            blue = blockInfoList.blockList[nextBlockNum].blue;
-        }
-        else
-        {
-            red = blockInfoList.blockList[blockNum].red;
-            green = blockInfoList.blockList[blockNum].green;
-            blue = blockInfoList.blockList[blockNum].blue;
-        }
-
-        Color blockColor = new Color32((byte)red, (byte)green, (byte)blue, 255);
-
-        return blockColor;
-    }
-
-    // 落下ブロックの水平移動処理
-    public void HorizontalMove(BlockProperty[,] blockPropList, BlockInfoList blockInfoList)
-    {
-        if (Input.GetAxis("Horizontal") > 0 && !JudgeContactRight(blockPropList, blockInfoList))
-        {
-            fallBlockPosX++;
-        }
-        else if (Input.GetAxis("Horizontal") < 0 && !JudgeContactLeft(blockPropList, blockInfoList))
-        {
-            fallBlockPosX--;
-        }
-    }
-
-    // 落下ブロックの回転処理
-    public int[,] RotationMove(int[,] fallBlockStat, BlockInfoList blockInfoList)
-    {
-        rot++;
-        if (rot == 4) rot = 0;
-        fallBlockStat = SetFallBlock(blockInfoList);
-
-        return fallBlockStat;
-    }
-
-    // 落下ブロック下移動処理
-    public void VerticalMove()
-    {
-        if (Input.GetAxis("Vertical") < 0)
-        {
-            fallBlockPosY++;
-            fallCountTime = 0;
-        }
-    }
-
-    // 新しい落下ブロックの設定
-    public void NextBlockInfoSet()
-    {
-        fallBlockPosX = GrovalConst.FALL_BLOCK_INIT_POS_X;
-        fallBlockPosY = GrovalConst.FALL_BLOCK_INIT_POS_Y;
-        blockNum = nextBlockNum;
-        rot = 0;
-    }
-
-    // 着地判定
-    public bool JudgeGround(BlockProperty[,] blockPropList, BlockInfoList blockInfoList)
-    {
-        bool groundFlg = false;
-        int[,] block = SetFallBlock(blockInfoList);
-        for (int i = 0; i < 4; i++)
-        {
-            for (int j = 3; j >= 0; j--)
-            {
-                if (block[j, i] == 3)
+                // 壁・床ブロック生成
+                if (wallBlockPos[j, i] == 1 || wallBlockPos[j, i] == 2)
                 {
-                    if (blockPropList[fallBlockPosY + j + 1, fallBlockPosX + i].BlockStatus == 2 || blockPropList[fallBlockPosY + j + 1, fallBlockPosX + i].BlockStatus == 4)
-                    {
-                        groundFlg = true;
-                        break;
-                    }
+                    GameObject.Instantiate(wallBlockPfb, new Vector3(i + GlobalConst.ORIGIN_POS_X, -j + GlobalConst.ORIGIN_POS_Y, 0), Quaternion.identity);
                 }
             }
         }
-        return groundFlg;
     }
 
-    // 右側壁当たり判定
-    public bool JudgeContactRight(BlockProperty[,] blockPropList, BlockInfoList blockInfoList)
+    public void CreatePlacementBlock(GameObject placementBlockPfb)
     {
-        bool contactFlg = false;
-        int[,] block = SetFallBlock(blockInfoList);
-        for (int j = 0; j < 4; j++)
+        for (int i = 1; i < GlobalConst.PLACEMENT_BLOCK_WIDTH; i++)
         {
-            for (int i = 3; i >= 0; i--)
+            for (int j = 1; j < GlobalConst.PLACEMENT_BLOCK_HIGHT; j++)
             {
-                if (block[j, i] == 3)
+                // 配置ブロック生成
+                blockObj[j, i] = GameObject.Instantiate(placementBlockPfb, new Vector3(i + GlobalConst.ORIGIN_POS_X, -j + GlobalConst.ORIGIN_POS_Y, 0), Quaternion.identity);
+                blockObj[j, i].gameObject.SetActive(false);
+            }
+        }
+    }
+
+    public void UpdatePlacementBlock()
+    {
+        for (int i = 1; i < GlobalConst.PLACEMENT_BLOCK_WIDTH; i++)
+        {
+            for (int j = 1; j < GlobalConst.PLACEMENT_BLOCK_HIGHT; j++)
+            {
+                // 配置ブロック更新
+                if (blockPropList[j, i].BlockStatus == 4)
                 {
-                    if (blockPropList[fallBlockPosY + j, fallBlockPosX + i + 1].BlockStatus == 1 || blockPropList[fallBlockPosY + j, fallBlockPosX + i + 1].BlockStatus == 4)
-                    {
-                        contactFlg = true;
-                        break;
-                    }
+                    blockObj[j, i].gameObject.SetActive(true);
+                    blockObj[j, i].GetComponent<SpriteRenderer>().color = blockPropList[j, i].BlockColor;
+                }
+                else
+                {
+                    blockObj[j, i].gameObject.SetActive(false);
                 }
             }
         }
-        return contactFlg;
-    }
-
-    // 左側壁当たり判定
-    public bool JudgeContactLeft(BlockProperty[,] blockPropList, BlockInfoList blockInfoList)
-    {
-        bool contactFlg = false;
-        int[,] block = SetFallBlock(blockInfoList);
-        for (int j = 0; j < 4; j++)
-        {
-            for (int i = 0; i < 4; i++)
-            {
-                if (block[j, i] == 3)
-                {
-                    if (blockPropList[fallBlockPosY + j, fallBlockPosX + i - 1].BlockStatus == 1 || blockPropList[fallBlockPosY + j, fallBlockPosX + i - 1].BlockStatus == 4)
-                    {
-                        contactFlg = true;
-                        break;
-                    }
-                }
-            }
-        }
-        return contactFlg;
     }
 
     // ブロック消去判定
-    public bool JudgeEraseRow(BlockProperty[,] blockPropList)
+    public bool JudgeEraseRow()
     {
         bool eraseFlg = false;
-        for (int j = 0; j < GrovalConst.PLACEMENT_BLOCK_HIGHT; j++)
+        for (int j = 0; j < GlobalConst.PLACEMENT_BLOCK_HIGHT; j++)
         {
             eraseRow[j] = false;
             bool buff = true;
-            for (int i = 0; i < GrovalConst.PLACEMENT_BLOCK_WIDTH; i++)
+            for (int i = 0; i < GlobalConst.PLACEMENT_BLOCK_WIDTH; i++)
             {
                 if (blockPropList[j, i].BlockStatus == 0)
                 {
                     buff = false;
                 }
             }
+
             if (buff)
             {
                 eraseRow[j] = true;
@@ -255,15 +117,80 @@ public class BlockController
     }
 
     //ゲームオーバー判定
-    public bool JudgeGameOver(BlockProperty[,] blockPropList, int fallBlockInitPosX, int fallBlockInitPosY)
+    public bool JudgeGameOver()
     {
-        if (blockPropList[fallBlockInitPosY, fallBlockInitPosX].BlockStatus == 4)
+        for (int i=0; i<GlobalConst.WIDTH; i++)
         {
-            return true;
+            if (blockPropList[0, i].BlockStatus == 4)
+            {
+                return true;
+            }
         }
-        else
+        return false;
+    }
+
+    // ブロック消去エフェクトON
+    public IEnumerator EraseEffectOn()
+    {
+        for (int j = 0; j < GlobalConst.PLACEMENT_BLOCK_HIGHT; j++)
         {
-            return false;
+            if (eraseRow[j])
+            {
+                for (int i = 1; i < GlobalConst.PLACEMENT_BLOCK_WIDTH; i++)
+                {
+                    blockColor[i] = blockObj[j, i].GetComponent<SpriteRenderer>().color;
+                    blockObj[j, i].GetComponent<SpriteRenderer>().color = Color.white;
+                }
+            }
         }
+
+        yield return new WaitForSeconds(0.5f);
+    }
+
+    // ブロック消去エフェクトOFF
+    public IEnumerator EraseEffectOff()
+    {
+        for (int j = 0; j < GlobalConst.PLACEMENT_BLOCK_HIGHT; j++)
+        {
+            if (eraseRow[j])
+            {
+                for (int i = 1; i < GlobalConst.PLACEMENT_BLOCK_WIDTH; i++)
+                {
+                    blockObj[j, i].GetComponent<SpriteRenderer>().color = blockColor[i];
+                }
+            }
+        }
+
+        yield return new WaitForSeconds(0.5f);
+    }
+
+    // ブロック消去処理
+    public IEnumerator BlockErase()
+    {
+        eraseCount = 0;
+        for (int j = 0; j < GlobalConst.PLACEMENT_BLOCK_HIGHT; j++)
+        {
+            if (eraseRow[j])
+            {
+                eraseCount++;
+                // 1行消去
+                for (int i = 1; i < GlobalConst.PLACEMENT_BLOCK_WIDTH; i++)
+                {
+                    blockPropList[j, i].BlockStatus = 0;
+                }
+                // 消去分、下にずらす
+                for (int k = j; k > 0; k--)
+                {
+                    for (int i = 1; i < GlobalConst.PLACEMENT_BLOCK_WIDTH; i++)
+                    {
+                        blockPropList[k, i].Copy(blockPropList[k - 1, i]);
+                    }
+                }
+            }
+        }
+
+        doEraseFlg = false;
+
+        yield break;
     }
 }
