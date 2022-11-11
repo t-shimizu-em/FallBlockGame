@@ -1,6 +1,7 @@
 using Common;
 using UnityEngine;
 using UnityEngine.UI;
+using Cysharp.Threading.Tasks;
 
 public class GameController : MonoBehaviour
 {
@@ -74,7 +75,7 @@ public class GameController : MonoBehaviour
         UpdateDisplay();
     }
 
-    async void Update()
+    void Update()
     {
         if (!blockController.doEraseFlg)
         {
@@ -140,7 +141,7 @@ public class GameController : MonoBehaviour
                     break;
                 case ERASE:
                     Init();
-                    await blockController.BlockErase();
+                    blockController.BlockErase().Forget();
                     score += AddScore(blockController.eraseCount);
                     scoreText.text = "Score:" + score;
                     eraseAudioSource.PlayOneShot(eraseSe);
