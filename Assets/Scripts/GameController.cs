@@ -1,7 +1,6 @@
-using System.Collections;
+using Common;
 using UnityEngine;
 using UnityEngine.UI;
-using Common;
 
 public class GameController : MonoBehaviour
 {
@@ -75,7 +74,7 @@ public class GameController : MonoBehaviour
         UpdateDisplay();
     }
 
-    void Update()
+    async void Update()
     {
         if (!blockController.doEraseFlg)
         {
@@ -135,11 +134,17 @@ public class GameController : MonoBehaviour
                         else
                         {
                             Init();
+                            gameStat = START;
                         }
                     }
                     break;
                 case ERASE:
-                    StartCoroutine(Coroutine(this));
+                    Init();
+                    await blockController.BlockErase();
+                    score += AddScore(blockController.eraseCount);
+                    scoreText.text = "Score:" + score;
+                    eraseAudioSource.PlayOneShot(eraseSe);
+                    gameStat = START;
                     break;
                 case GAMEOVER:
                     gameOverText.gameObject.SetActive(true);
@@ -148,31 +153,31 @@ public class GameController : MonoBehaviour
                     pauseButton.gameObject.SetActive(false);
                     break;
             }
-        }
 
-        // 落下ブロックの水平移動操作
-        if (Input.GetButtonDown("Horizontal"))
-        {
-            fallBlockController.HorizontalMove(blockController.blockPropList);
-            moveAudioSource.PlayOneShot(moveSe);
-            UpdateDisplay();
-        }
+            // 落下ブロックの水平移動操作
+            if (Input.GetButtonDown("Horizontal"))
+            {
+                fallBlockController.HorizontalMove(blockController.blockPropList);
+                moveAudioSource.PlayOneShot(moveSe);
+                UpdateDisplay();
+            }
 
-        // 壁際での回転禁止処理
-        fallBlockController.BanRotationMove(blockController.blockPropList);
+            // 壁際での回転禁止処理
+            fallBlockController.BanRotationMove(blockController.blockPropList);
 
-        // 落下ブロックの回転操作
-        if (Input.GetButtonDown("Jump") && !fallBlockController.rotBanFlg)
-        {
-            fallBlockController.RotationMove(blockInfoList);
-            rotAudioSource.PlayOneShot(rotSe);
-        }
+            // 落下ブロックの回転操作
+            if (Input.GetButtonDown("Jump") && !fallBlockController.rotBanFlg)
+            {
+                fallBlockController.RotationMove(blockInfoList);
+                rotAudioSource.PlayOneShot(rotSe);
+            }
 
-        // 落下ブロック落下速度上昇
-        if (Input.GetButtonDown("Vertical") && !fallBlockController.downBanFlg)
-        {
-            fallBlockController.VerticalMove();
-            moveAudioSource.PlayOneShot(moveSe);
+            // 落下ブロック落下速度上昇
+            if (Input.GetButtonDown("Vertical") && !fallBlockController.downBanFlg)
+            {
+                fallBlockController.VerticalMove();
+                moveAudioSource.PlayOneShot(moveSe);
+            }
         }
     }
 
@@ -206,24 +211,6 @@ public class GameController : MonoBehaviour
 
         // 配置ブロック更新
         blockController.UpdatePlacementBlock();
-    }
-
-    // ブロック消去処理
-    private IEnumerator Coroutine(MonoBehaviour monoBehaviour)
-    {
-        blockController.doEraseFlg = true;
-        var seq = new CoroutineSequence(monoBehaviour);
-        seq.Append(blockController.EraseEffectOn());
-        seq.Append(blockController.EraseEffectOff());
-        seq.Append(blockController.BlockErase());
-        seq.Play();
-        Init();
-
-        yield return new WaitForSeconds(1.1f);
-
-        score += AddScore(blockController.eraseCount);
-        scoreText.text = "Score:" + score;
-        eraseAudioSource.PlayOneShot(eraseSe);
     }
 
     // スコア加算
@@ -260,6 +247,5 @@ public class GameController : MonoBehaviour
         fallBlockController.UpdateFallBlockProperty(blockInfoList);
         fallBlockController.UpdateNextFallBlockPropery(blockInfoList);
         groundCountTime = 0;
-        gameStat = START;
     }
 }

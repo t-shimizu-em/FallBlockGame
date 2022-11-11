@@ -1,6 +1,6 @@
-﻿using UnityEngine;
+﻿using Common;
+using UnityEngine;
 using Random = UnityEngine.Random;
-using Common;
 
 public class FallBlockController
 {

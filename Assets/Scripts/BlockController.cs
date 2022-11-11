@@ -1,8 +1,6 @@
-﻿using System;
-using System.Collections;
+﻿using Common;
+using Cysharp.Threading.Tasks;
 using UnityEngine;
-using Common;
-using UnityEngine.SocialPlatforms.Impl;
 
 public class BlockController
 {
@@ -129,9 +127,11 @@ public class BlockController
         return false;
     }
 
-    // ブロック消去エフェクトON
-    public IEnumerator EraseEffectOn()
+    // ブロック消去処理
+    public async UniTask BlockErase()
     {
+        doEraseFlg = true;
+
         for (int j = 0; j < GlobalConst.PLACEMENT_BLOCK_HIGHT; j++)
         {
             if (eraseRow[j])
@@ -144,12 +144,8 @@ public class BlockController
             }
         }
 
-        yield return new WaitForSeconds(0.5f);
-    }
+        await UniTask.Delay(500);
 
-    // ブロック消去エフェクトOFF
-    public IEnumerator EraseEffectOff()
-    {
         for (int j = 0; j < GlobalConst.PLACEMENT_BLOCK_HIGHT; j++)
         {
             if (eraseRow[j])
@@ -161,13 +157,10 @@ public class BlockController
             }
         }
 
-        yield return new WaitForSeconds(0.5f);
-    }
+        await UniTask.Delay(500);
 
-    // ブロック消去処理
-    public IEnumerator BlockErase()
-    {
         eraseCount = 0;
+
         for (int j = 0; j < GlobalConst.PLACEMENT_BLOCK_HIGHT; j++)
         {
             if (eraseRow[j])
@@ -189,8 +182,8 @@ public class BlockController
             }
         }
 
-        doEraseFlg = false;
+        await UniTask.Delay(100);
 
-        yield break;
+        doEraseFlg = false;
     }
 }
